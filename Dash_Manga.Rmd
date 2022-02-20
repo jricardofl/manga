@@ -1,0 +1,1090 @@
+---
+title: "DASHBOARD MERCADO DE MANGA"
+#author: "João Ricardo Lima"
+output: 
+  flexdashboard::flex_dashboard:
+    navbar:
+      - {title: "OBSERVATÓRIO DO MERCADO DE MANGA", href: "https://www.embrapa.br/observatorio-da-manga", align: right}
+    orientation: rows
+    vertical_layout: fill #sem barra de rolagem e scroll com barra
+    theme: 
+      version: 4
+      bootswatch: bootstrap
+      navbar-bg: "#183b8c"
+      bg:        "#ffffff"
+      fg:        "#ffffff"
+#runtime: shiny    
+---
+
+```{r setup, include=FALSE}
+library(flexdashboard)
+library(foreign)
+library(mFilter)
+library(forecast)
+library(dplyr)
+library(tsutils)
+library(xts)
+library(ggthemes)
+library(FinTS)
+library(scales)
+library(ggplot2)
+library(reshape)
+library(reshape2)
+library(imputeTS)
+library(seasonal)
+library(uroot)
+library(tseries)
+library(quantmod)
+library(kableExtra)# complex tables
+library(lmtest)
+library(plotly)
+#library(rmarkdown)
+library(bslib)
+#library(shiny)
+
+knitr::opts_chunk$set(
+  echo       = FALSE,
+  warning    = FALSE,
+  message    = FALSE,
+  fig.align  = "left",
+  comment    = "#"
+  )
+
+library(lubridate)
+anterior <- as.Date("2021-12-01")
+atual <-  as.Date("2022-01-01")
+data <- as.Date("2022-02-18")
+sem_ano <- 7 #ajustar semanalmente
+
+# Linhas que precisam de ajuste: 71, 104, 107
+```
+
+
+``` {r database1}
+#Direcionado o R para o Diretorio a ser trabalhado
+setwd('c:/Users/Joao Ricardo Lima/Dropbox/tempecon/dados_manga')
+
+#Entrando dados no R
+dados <- read.csv2('dados_manga_palmer_semana.csv', header=T, sep=";", dec=".")
+#dados <- dados[,-c(9:10)] #retirar as ultimas colunas
+colnames(dados)[1]<-'produto'
+
+#Entrando dados no R - Deflator
+igpdi <- read.csv2('igpdi.csv', 
+                   header=T, sep=";",
+                   dec=".")
+
+dados_comb<-cbind(dados, igpdi)
+
+teste<-dados_comb[,4]-dados_comb[,7]
+
+dadosp<-dados_comb[,-c(1,2,6,7)]
+
+#Deflacionar a serie de manga
+dadosp$preco_def <- dadosp[,3]*(tail(dadosp[,4],1)/dadosp[,4])
+#dadosp<-dadosp[,-2]
+
+#Criando uma variável com as datas semanais
+dadosp$date <- seq(as.Date('2012-01-14'),to=data, by='1 week') 
+dadosp$date[dadosp$date == "2016-01-02"] <- "2015-12-31" #ajustando algumas datas
+dadosp$date[dadosp$date == "2015-01-03"] <- "2014-12-31"
+dadosp$date[dadosp$date == "2014-01-04"] <- "2013-12-31"
+dadosp$date[dadosp$date == "2013-01-05"] <- "2012-12-31"
+
+#Analise de Serie Temporal
+preco_palmer <- dadosp[,5]
+preco_palmer <- ts(preco_palmer, start=c(2012,1), freq=52)
+#preco_palmer <- window(preco_palmer, end=c(2021,52))
+
+sazonal_palmer <- cmav(preco_palmer, outplot=F)
+
+# Parte 2
+#Decompor a série
+decompa<-decompose(preco_palmer, type = 'multiplicative')
+
+sazonalidade <- decompa$figure
+semanas <- seq(1:52)
+sazonal_graph <- tibble(cbind(semanas, sazonalidade))
+
+#Parte 3
+#Analise das comparações entre as médias
+preco_palmer_2019 <- window(preco_palmer, end=c(2019,52))
+seas19<-seasplot(preco_palmer_2019, trend=F, outplot = F)
+medias19 <- colMeans(seas19$season)
+
+preco_palmer_2020 <- window(preco_palmer, end=c(2020,52))
+
+preco_palmer_2021 <- window(preco_palmer, end=c(2021,52))
+#seas21<-seasplot(preco_palmer_2021, trend=F, outplot = F)
+#medias21 <- colMeans(seas21$season)
+
+preco_palmer_22 <- as.matrix(tail(dadosp$preco_def,sem_ano))  
+preco_palmer_2022 <- matrix(NA, nrow=52, ncol=1)
+
+for(i in 1:sem_ano){                                          
+  preco_palmer_2022[i,1] = preco_palmer_22[i,1]
+}
+  
+
+#Como só se tem até a semana 52
+medias19 <- medias19[1:52]
+#medias21 <- medias21[1:52]
+
+matrix = matrix(NA, nrow=52, ncol=2)
+
+for(i in 1:52){
+  matrix[i,1] = min(seas19$season[,i])
+  matrix[i,2] = max(seas19$season[,i])
+}
+
+time <- seq(1:52)
+table <- data.frame(time, matrix[,1], round(medias19,2), matrix[,2], round(tail(preco_palmer_2020,52),2),
+                    round(tail(preco_palmer_2021,52),2), preco_palmer_2022[,1])
+colnames(table) = c('Semanas', 'Mínimo', 'Média', 'Máximo', '2020', '2021', 
+                    '2022')
+tablea <- table[,-c(5:7)]
+tableb <- table[,-c(2,3,4)]
+
+tablea2 <- melt(tablea, id.var='Semanas')
+tableb2 <- melt(tableb, id.var='Semanas')
+mycolors <- c("lightblue3", "gray44", "gold")
+
+table_db <- data.frame(matrix[,1], round(medias19,2), matrix[,2], round(tail(preco_palmer_2020,52),2),
+                    round(tail(preco_palmer_2021,52),2), preco_palmer_2022[,1])
+colnames(table_db) = c('Mínimo', 'Média', 'Máximo', '2020', '2021', '2022')
+
+#Parte 4
+
+preco_palmer_21 <- dadosp %>% filter(ano=='2021')
+preco_palmer_2021 <- as.matrix(preco_palmer_21$preco_def)
+variacao_21 <- (preco_palmer_2021/lag(preco_palmer_2021, 1) - 1)*100
+
+variacao_22 <- (preco_palmer_2022/lag(preco_palmer_2022, 1) - 1)*100
+
+semanas <- seq(1:52)
+variacao <- data.frame(semanas, variacao_21[,1], variacao_22[,1])
+colnames(variacao) = c('Semanas', 'Ano_2021', 'Ano_2022')
+
+variacao <- melt(variacao, id.var='Semanas')
+
+mycolors2 <- c("orange", "lightblue3")
+
+# Customizar tema interativamente em tempo real (ver mensagens no console)
+#bslib::bs_themer()
+
+```
+
+PALMER
+======================================================================
+
+Row {data-height=150}
+-----------------------------------------------------------------------
+
+### Preço de Palmer na Semana `r strftime(data, format = "%V")` de 2022 
+``` {r}
+num <- tail(preco_palmer,1)
+valueBox(
+  value = paste0( "R$", format(num, decimal.mark =  ",")),
+  color = "tomato",
+  icon= "fa-arrow-down")
+```
+
+### Preço de Palmer na Semana `r strftime(data, format = "%V")` de 2021
+``` {r}
+num <- 3.07
+valueBox(
+  value = paste0( "R$", format(num, decimal.mark =  ",")),
+#  color = "#edc40c",
+  icon= "fa-pen")
+```
+
+### Preço de Palmer na Semana `r strftime(data, format = "%V")` de 2020
+``` {r}
+num <- 1.77
+valueBox(
+  value = paste0( "R$", format(num, decimal.mark =  ",")),
+#  color = "#edc40c",
+  icon= "fa-pen")
+```
+
+Row
+-----------------------------------------------------------------------
+
+### Mínimo, Máximo, Media e preços de 2020 a 2022 de Manga Palmer {.no-title}
+```{r palmer3, results='', fig.cap='', fig.width=6, fig.height=4, fig.align='center'}
+
+g1 <- ggplot()+
+  geom_col(data=tableb2, aes(x=Semanas, y=value, fill=variable), size=2, width = 0.7,
+           position = "dodge")+
+  scale_fill_manual(values=mycolors)+
+    geom_line(data=tablea2, aes(x=Semanas, y=value, colour=variable), linetype = "solid",
+            size = 1)+
+  scale_colour_manual(values = c("red", "chocolate", "darkgreen")) +
+  scale_y_continuous(limits = c(0, 8), n.breaks = 8, labels = number_format(accuracy = 0.01,
+                                                       decimal.mark = ","))+
+  scale_x_continuous(breaks = seq(1, 52, by = 2))+
+  labs(y= "Preço R$", x= "Semanas de cada Ano", title='Mínimo, Máximo, Média e preços de 2020 a 2022 de Manga Palmer ao produtor',
+       caption = "Fonte: CEPEA reprocessado pelo Observatório de Mercado de Manga da Embrapa")+
+  theme_minimal()+
+  theme(axis.text.x=element_text(angle=0, hjust=0.5, size=8, margin = margin(b=10)),
+        axis.text.y=element_text(hjust=0.5, size=8, margin = margin(l=10)),
+        axis.title.y = element_text(size=8, face = "bold"),
+        axis.title.x = element_text(size=8, face = "bold"),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        plot.caption = element_text(hjust = 0, size=8),
+        plot.title = element_text(hjust = 0.5, size=12, face=""),
+        legend.position = "right", legend.title = element_blank(),
+        legend.text=element_text(size=8)) # Definindo posição da legenda
+
+ggplotly(g1) %>%
+  layout(legend = list(
+                      orientation = "h", 
+                      x=0.2, 
+                      y=1.05,
+                      title=''))
+```
+
+### Variação Semanal em 2020 e 2021 de Manga Palmer {.no-title}
+
+```{r palmer5, results='', fig.cap='', fig.width=5, fig.height=4}
+
+g2 <- ggplot()+
+  geom_col(data=variacao, aes(x=Semanas, y=value, fill=variable), size=2, width = 0.9, position = "dodge")+
+  scale_fill_manual(values=mycolors2)+
+  scale_y_continuous(labels = number_format(accuracy = 0.01, decimal.mark = ","))+
+  scale_x_continuous(breaks = seq(1, 52, by = 2))+
+  labs(y= "Variação Percentual", x= "Semanas do Ano", title='Variação Semanal de preços de Manga Palmer ao produtor',
+       caption = "Fonte: Observatório de Mercado de Manga da Embrapa")+
+  theme_minimal()+
+   theme(axis.text.x=element_text(angle=0, hjust=0.5, size=8, margin = margin(b=10)),
+        axis.text.y=element_text(hjust=0.5, size=8, margin = margin(l=10)),
+        axis.title.y = element_text(size=8, face = "bold"),
+        axis.title.x = element_text(size=8, face = "bold"),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        plot.caption = element_text(hjust = 0, size=8),
+        plot.title = element_text(hjust = 0.5, size=12, face=""),
+        legend.position = "right", legend.title = element_blank(),
+        legend.text=element_text(size=8)) # Definindo posição da legenda
+
+ggplotly(g2) %>%
+  layout(legend = list(
+                      orientation = "h", 
+                      x=0.35, 
+                      y=-0.2,
+                      title=''))
+```
+
+
+Row
+-----------------------------------------------------------------------
+
+### Preço e Tendência de Manga Palmer {.no-title}
+
+```{r palmer1, results='', fig.cap='', fig.width=6, fig.height=4}
+#Gráfico com Ggplot2
+
+g3 <- ggplot(data=dadosp, aes(x=date)) +  #estetica vai valer para todos os geom's
+  geom_line(aes(y=preco_def, colour="PREÇO"), lwd=0.5)+
+  geom_line(aes(y=sazonal_palmer, colour="TENDÊNCIA"), lwd=1)+
+  scale_colour_manual("", 
+                      breaks = c("PREÇO", "TENDÊNCIA"),
+                      values = c("black", "tomato")) +
+  labs(y= "Preço R$", x= "Semanas de cada Ano", title='Evolução dos preços ao produtor e Tendência Manga Palmer',
+       caption = "Fonte: CEPEA reprocessado pelo Observatório de Mercado de Manga da Embrapa") +
+  scale_y_continuous(limits=c(0,8), n.breaks = 9, expand = expansion(add=c(0,0.5)), 
+                     labels=number_format(accuracy = 0.01, decimal.mark = ","))+
+  scale_x_date(date_breaks = "1 year",
+               labels = date_format("%Y"))+
+  theme_classic()+ #Definindo tema
+  theme(axis.text.x=element_text(angle=0, hjust=0.5, size=8, margin = margin(b=10)),
+        axis.text.y=element_text(hjust=1, size=8, margin = margin(l=10)),
+        axis.title.x = element_text(size=8, face = "bold", margin = margin(b=10)),
+        axis.title.y = element_text(size=8, face = "bold", margin = margin(l=10)),
+        plot.title = element_text(hjust = 0.5, size=12),
+        plot.caption = element_text(hjust = 0, size=8),
+        legend.position = c(2,1),
+        legend.justification = c(1.2, 1.2),
+        legend.text=element_text(size=8)) # Definindo posição da legenda
+
+ggplotly(g3) %>%
+  layout(legend = list(
+                      orientation = "h", 
+                      x=0.4, 
+                      y=-0.2,
+                      title=''))
+```
+
+### Sazonalidade de Manga Palmer {.no-title}
+
+```{r palmer2, results='', fig.cap='', fig.width=5, fig.height=4, fig.align='center'}
+#Decompor a Série
+
+g4 <- ggplot(data=sazonal_graph)+
+  geom_line(aes(x=semanas, y=sazonalidade), color="cornflowerblue", size=1.2)+
+  scale_y_continuous(limits=c(0,1.8), n.breaks = 5, expand = expansion(add=c(0,0.5)), 
+                     labels=number_format(accuracy = 0.01, decimal.mark = ","))+
+  scale_x_continuous(breaks = seq(1, 52, by = 2))+
+  labs(y= "", x= "Semanas de cada Ano", title='Sazonalidade do preço de Manga Palmer',
+       caption = "Fonte: Observatório de Mercado de Manga da Embrapa")+
+  theme_classic()+
+  theme(axis.text.x=element_text(angle=0, hjust=0.5, size=8, margin = margin(b=10)),
+        axis.text.y=element_text(hjust=0.5, size=8, margin = margin(l=10)),
+        axis.title.y = element_text(size=8, face = "bold"),
+        axis.title.x = element_text(size=8, face = "bold"),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        plot.caption = element_text(hjust = 0, size=8),
+        legend.position = "bottom", legend.title = element_blank(),
+        legend.text=element_text(size=8)) # Definindo posição da legenda
+
+ggplotly(g4) %>%
+  layout(legend = list(
+                      orientation = "h", 
+                      x=0.25, 
+                      y=-0.2,
+                      title=''))
+```
+
+TOMMY
+======================================================================
+
+``` {r database2}
+#Direcionado o R para o Diretorio a ser trabalhado
+setwd('c:/Users/Joao Ricardo Lima/Dropbox/tempecon/dados_manga')
+
+#Entrando dados no R
+dados <- read.csv2('dados_manga_tommy_semana.csv', header=T, sep=";", dec=".")
+#dados <- dados[,-c(9:10)] #retirar as ultimas colunas
+colnames(dados)[1]<-'produto'
+
+#Entrando dados no R - Deflator
+igpdi <- read.csv2('igpdi.csv', 
+                   header=T, sep=";",
+                   dec=".")
+
+dados_comb<-cbind(dados, igpdi)
+
+teste<-dados_comb[,4]-dados_comb[,7]
+
+dadosp<-dados_comb[,-c(1,2,6,7)]
+
+#Deflacionar a serie de manga
+dadosp$preco_def <- dadosp[,3]*(tail(dadosp[,4],1)/dadosp[,4])
+#dadosp<-dadosp[,-2]
+
+#Criando uma variável com as datas semanais
+dadosp$date <- seq(as.Date('2012-01-14'),to=data,by='1 week')  
+dadosp$date[dadosp$date == "2016-01-02"] <- "2015-12-31" #ajustando algumas datas
+dadosp$date[dadosp$date == "2015-01-03"] <- "2014-12-31"
+dadosp$date[dadosp$date == "2014-01-04"] <- "2013-12-31"
+dadosp$date[dadosp$date == "2013-01-05"] <- "2012-12-31"
+
+#Analise de Serie Temporal
+preco_tommy <- dadosp[,5]
+preco_tommy <- ts(preco_tommy, start=c(2012,1), freq=52)
+#preco_tommy <- window(preco_tommy, end=c(2021,52))
+
+sazonal_tommy <- cmav(preco_tommy, outplot=F)
+
+# Parte 2
+#Decompor a série
+decompa<-decompose(preco_tommy, type = 'multiplicative')
+
+sazonalidade <- decompa$figure
+semanas <- seq(1:52)
+sazonal_graph <- tibble(cbind(semanas, sazonalidade))
+
+#Parte 3
+#Analise das comparações entre as médias
+preco_tommy_2019 <- window(preco_tommy, end=c(2019,52))
+seas19<-seasplot(preco_tommy_2019, trend=F, outplot = F)
+medias19 <- colMeans(seas19$season)
+
+preco_tommy_2020 <- window(preco_tommy, end=c(2020,52))
+
+preco_tommy_2021 <- window(preco_tommy, end=c(2021,52))
+#seas21<-seasplot(preco_tommy_2021, trend=F, outplot = F)
+#medias21 <- colMeans(seas21$season)
+
+preco_tommy_22 <- as.matrix(tail(dadosp$preco_def,sem_ano))  
+preco_tommy_2022 <- matrix(NA, nrow=52, ncol=1)
+
+for(i in 1:sem_ano){                                         
+  preco_tommy_2022[i,1] = preco_tommy_22[i,1]
+}
+
+
+#Como só se tem até a semana 52
+medias19 <- medias19[1:52]
+#medias21 <- medias21[1:52]
+
+matrix = matrix(NA, nrow=52, ncol=2)
+
+for(i in 1:52){
+  matrix[i,1] = min(seas19$season[,i])
+  matrix[i,2] = max(seas19$season[,i])
+}
+
+time <- seq(1:52)
+table <- data.frame(time, matrix[,1], round(medias19,2), matrix[,2], round(tail(preco_tommy_2020,52),2),
+                    round(tail(preco_tommy_2021,52),2), preco_tommy_2022[,1])
+colnames(table) = c('Semanas', 'Mínimo', 'Média', 'Máximo', '2020', '2021', 
+                    '2022')
+tablea <- table[,-c(5:7)]
+tableb <- table[,-c(2,3,4)]
+
+tablea2 <- melt(tablea, id.var='Semanas')
+tableb2 <- melt(tableb, id.var='Semanas')
+mycolors <- c("lightblue3", "gray44", "gold")
+
+table_db <- data.frame(matrix[,1], round(medias19,2), matrix[,2], round(tail(preco_tommy_2020,52),2),
+                       round(tail(preco_tommy_2021,52),2), preco_tommy_2022[,1])
+colnames(table_db) = c('Mínimo', 'Média', 'Máximo', '2020', '2021', '2022')
+
+#Parte 4
+
+preco_tommy_21 <- dadosp %>% filter(ano=='2021')
+preco_tommy_2021 <- as.matrix(preco_tommy_21$preco_def)
+variacao_21 <- (preco_tommy_2021/lag(preco_tommy_2021, 1) - 1)*100
+
+variacao_22 <- (preco_tommy_2022/lag(preco_tommy_2022, 1) - 1)*100
+
+semanas <- seq(1:52)
+variacao <- data.frame(semanas, variacao_21[,1], variacao_22[,1])
+colnames(variacao) = c('Semanas', '2021', '2022')
+
+variacao <- melt(variacao, id.var='Semanas')
+
+mycolors2 <- c("orange", "lightblue3")
+```
+
+Row {data-height=150}
+-----------------------------------------------------------------------
+
+### Preço de Tommy na Semana `r strftime(data, format = "%V")` de 2022
+``` {r}
+num <- tail(preco_tommy,1)
+valueBox(
+  value = paste0( "R$", format(num, decimal.mark =  ",")),
+  color = "green",
+  icon= "fa-arrow-up")
+```
+
+### Preço de Tommy na Semana `r strftime(data, format = "%V")` de 2021
+``` {r}
+num <- 3.09
+valueBox(
+  value = paste0( "R$", format(num, decimal.mark =  ",")),
+#  color = "#edc40c",
+  icon= "fa-pen")
+```
+
+### Preço de Tommy na Semana `r strftime(data, format = "%V")` de 2020
+``` {r}
+num <- 2.02
+valueBox(
+  value = paste0( "R$", format(num, decimal.mark =  ",")),
+#  color = "#edc40c",
+  icon= "fa-pen")
+```
+
+Row
+-----------------------------------------------------------------------
+
+### Mínimo, Máximo, Media e preços de 2020 a 2022 de Manga Tommy {.no-title}
+
+```{r tommy3, results='', fig.cap='', fig.width=6, fig.height=4, fig.align='center'}
+
+g5 <- ggplot()+
+    geom_col(data=tableb2, aes(x=Semanas, y=value, fill=variable), size=2, width = 0.7,
+             position = "dodge")+
+    scale_fill_manual(values=mycolors)+
+    geom_line(data=tablea2, aes(x=Semanas, y=value, colour=variable), linetype = "solid",
+              size = 1)+
+    scale_colour_manual(values = c("red", "chocolate", "darkgreen")) +
+    scale_y_continuous(limits = c(0, 8), n.breaks = 8, labels = number_format(accuracy = 0.01,
+                                                                              decimal.mark = ","))+
+    scale_x_continuous(breaks = seq(1, 52, by = 2))+
+    labs(y= "Preço R$", x= "Semanas de cada Ano", title='Mínimo, Máximo, Média e preços de 2020 a 2022 de Manga Tommy ao produtor',
+         caption = "Fonte: CEPEA reprocessado pelo Observatório de Mercado de Manga da Embrapa")+
+    theme_minimal()+
+    theme(axis.text.x=element_text(angle=0, hjust=0.5, size=8, margin = margin(b=10)),
+          axis.text.y=element_text(hjust=0.5, size=8, margin = margin(l=10)),
+          axis.title.y = element_text(size=8, face = "bold"),
+          axis.title.x = element_text(size=8, face = "bold"),
+          panel.grid.major = element_blank(),
+          panel.grid.minor = element_blank(),
+          plot.caption = element_text(hjust = 0, size=8),
+          plot.title = element_text(hjust = 0.5, size=12, face=""),
+          legend.position = "right", legend.title = element_blank(),
+          legend.text=element_text(size=8)) # Definindo posição da legenda
+
+ggplotly(g5) %>%
+  layout(legend = list(
+                      orientation = "h", 
+                      x=0.15, 
+                      y=1.05,
+                      title=''))
+```
+
+### Variação Semanal em 2020 e 2021 de Manga Tommy {.no-title}
+
+```{r tommy5, results='', fig.cap='', fig.width=5, fig.height=4}
+
+g6 <- ggplot()+
+    geom_col(data=variacao, aes(x=Semanas, y=value, fill=variable), size=2, width = 0.9, position = "dodge")+
+    scale_fill_manual(values=mycolors2)+
+    scale_y_continuous(labels = number_format(accuracy = 0.01, decimal.mark = ","))+
+    scale_x_continuous(breaks = seq(1, 52, by = 2))+
+    labs(y= "Variação Percentual", x= "Semanas do Ano", title='Variação Semanal de preços de Manga Tommy ao produtor',
+         caption = "Fonte: Observatório de Mercado de Manga da Embrapa")+
+    theme_minimal()+
+    theme(axis.text.x=element_text(angle=0, hjust=0.5, size=8, margin = margin(b=10)),
+          axis.text.y=element_text(hjust=0.5, size=8, margin = margin(l=10)),
+          axis.title.y = element_text(size=8, face = "bold"),
+          axis.title.x = element_text(size=8, face = "bold"),
+          panel.grid.major = element_blank(),
+          panel.grid.minor = element_blank(),
+          plot.caption = element_text(hjust = 0, size=8),
+          plot.title = element_text(hjust = 0.5, size=12, face=""),
+          legend.position = "right", legend.title = element_blank(),
+          legend.text=element_text(size=8)) # Definindo posição da legenda
+
+ggplotly(g6) %>%
+  layout(legend = list(
+                      orientation = "h", 
+                      x=0.35, 
+                      y=-0.2,
+                      title=''))
+```
+
+Row
+-----------------------------------------------------------------------
+  
+### Preço e Tendência de Manga Tommy {.no-title}
+
+```{r tommy1, results='', fig.cap='', fig.width=6, fig.height=4}
+#Gráfico com Ggplot2
+
+g7 <- ggplot(data=dadosp, aes(x=date)) +  #estetica vai valer para todos os geom's
+    geom_line(aes(y=preco_def, colour="PREÇO"), lwd=0.5)+
+    geom_line(aes(y=sazonal_tommy, colour="TENDÊNCIA"), lwd=1)+
+    scale_colour_manual("", 
+                        breaks = c("PREÇO", "TENDÊNCIA"),
+                        values = c("black", "tomato")) +
+    labs(y= "Preço R$", x= "Semanas de cada Ano", title='Evolução dos preços ao produtor e Tendência Manga Tommy',
+         caption = "Fonte: CEPEA reprocessado pelo Observatório de Mercado de Manga da Embrapa") +
+    scale_y_continuous(limits=c(0,8), n.breaks = 9, expand = expansion(add=c(0,0.5)), 
+                       labels=number_format(accuracy = 0.01, decimal.mark = ","))+
+    scale_x_date(date_breaks = "1 year",
+                 labels = date_format("%Y"))+
+    theme_classic()+ #Definindo tema
+    theme(axis.text.x=element_text(angle=0, hjust=0.5, size=8, margin = margin(b=10)),
+          axis.text.y=element_text(hjust=1, size=8, margin = margin(l=10)),
+          axis.title.x = element_text(size=8, face = "bold", margin = margin(b=10)),
+          axis.title.y = element_text(size=8, face = "bold", margin = margin(l=10)),
+          plot.title = element_text(hjust = 0.5, size=12, face=""),
+          plot.caption = element_text(hjust = 0, size=8),
+          legend.position = c(2,1),
+          legend.justification = c(1.2, 1.2),
+          legend.text=element_text(size=8)) # Definindo posição da legenda
+
+ggplotly(g7) %>%
+  layout(legend = list(
+                      orientation = "h", 
+                      x=0.4, 
+                      y=-0.2,
+                      title=''))
+```
+
+### Sazonalidade de Manga Tommy {.no-title}
+  
+```{r tommy2, results='', fig.cap='', fig.width=5, fig.height=4, fig.align='center'}
+#Decompor a Série
+
+g8 <- ggplot(data=sazonal_graph)+
+    geom_line(aes(x=semanas, y=sazonalidade), color="cornflowerblue", size=1.2)+
+    scale_y_continuous(limits=c(0,1.8), n.breaks = 5, expand = expansion(add=c(0,0.5)), 
+                       labels=number_format(accuracy = 0.01, decimal.mark = ","))+
+    scale_x_continuous(breaks = seq(1, 52, by = 2))+
+    labs(y= "", x= "Semanas de cada Ano", title='Sazonalidade do preço de Manga Tommy',
+         caption = "Fonte: Observatório de Mercado de Manga da Embrapa")+
+    theme_classic()+
+    theme(axis.text.x=element_text(angle=0, hjust=0.5, size=8, margin = margin(b=10)),
+          axis.text.y=element_text(hjust=0.5, size=8, margin = margin(l=10)),
+          axis.title.y = element_text(size=8, face = "bold"),
+          axis.title.x = element_text(size=8, face = "bold"),
+          panel.grid.major = element_blank(),
+          panel.grid.minor = element_blank(),
+          plot.caption = element_text(hjust = 0.5, size=8),
+          plot.title = element_text(hjust = 0.5, size=12, face=""),
+          legend.position = "bottom", legend.title = element_blank(),
+          legend.text=element_text(size=8)) # Definindo posição da legenda
+
+ggplotly(g8) %>%
+  layout(legend = list(
+                      orientation = "h", 
+                      x=0.25, 
+                      y=-0.2,
+                      title=''))
+```
+
+EXPORTAÇÕES
+======================================================================
+
+```{r tratamento_base}
+#Direcionado o R para o Diretorio a ser trabalhado
+setwd('c:/Users/Joao Ricardo Lima/Dropbox/tempecon/dados_manga')
+
+#Inicio do Script
+#Pacotes a serem utilizados 
+library(mFilter)
+library(forecast)
+library(tsutils)
+library(seasonal)
+library(ggplot2)
+library(uroot)
+library(tseries)
+library(ggthemes)
+library(dplyr)
+library(quantmod)
+library(scales)
+library(kableExtra)# complex tables
+library(lmtest)
+library(FinTS)
+library(rbcb)
+library(magrittr)
+library(rmarkdown)
+library(reshape2)
+library(rbcb)
+library(tidyverse)
+library(flexdashboard)
+library(dygraphs)
+library(plotly)
+library(DT)
+library(lubridate)
+
+checkX13()
+
+options(digits=4)
+
+#Entrando dados no R
+dados1 <- read.csv2('exportacoes_2012_2022.csv', header=T, sep=";", dec = ".")
+dados1 <- dados1/1000
+dados1[,1] <- seq(2012, 2022, by = 1)
+colnames(dados1) = c('Ano', 'Valor', "Toneladas")
+dados1 <- tibble(dados1)
+
+
+#Entrando dados no R
+dados2 <- read.csv2('total_exporta_br.csv', header=T, sep=";", dec = ".")
+#dados <- dados[,-c(9:10)] #retirar as ultimas colunas
+colnames(dados2)[1]<-'ano'
+
+#Entrando dados no R
+dados3 <- read.csv2('destinos_2022.csv', header=T, sep=";", dec = ".")
+colnames(dados3)[1]<-'Paises'
+
+#Entrando dados no R
+dados4 <- read.csv2('via_2022.csv', header=T, sep=";", dec = ".")
+colnames(dados4)[1]<-'Vias'
+
+#Entrando dados no R
+dados5 <- read.csv2('uf_2022.csv', header=T, sep=";" , dec = ".")
+colnames(dados5)[1]<-'UF'
+
+#Ajusta para Valor
+#Analise de Serie Temporal
+exporta_manga_valor <- dados2[,3]
+exporta_manga_valor<-exporta_manga_valor/1000000
+exporta_manga_valor <- ts(exporta_manga_valor, start=c(2012,1), freq=12)
+
+#Tendencia
+trend_valor <- cmav(exporta_manga_valor, outplot=F)
+date <- seq(as.Date('2012-01-01'),to=as.Date('2022-01-01'),by='1 month') #ajustar mensalmente
+trend_valor <- tibble(date, trend_valor)
+
+#Sazonalidade
+decompa<-decompose(exporta_manga_valor, type = 'multiplicative')
+sazonal_valor <- decompa$figure
+#meses <- seq(1:12)
+meses <- seq(as.Date("2021/1/1"), by = "month", length.out = 12) 
+sazonal_graph <- tibble(meses, sazonal_valor)
+
+#Comparações com os anos e entre as médias/max/min
+
+exporta_manga_valor_2019 <- window(exporta_manga_valor, end=c(2019,12))
+seas19<-seasplot(exporta_manga_valor_2019, trend=F, outplot = F)
+medias19 <- colMeans(seas19$season)
+
+exporta_manga_valor_2020 <- window(exporta_manga_valor, end=c(2020,12))
+
+exporta_manga_valor_2021 <- window(exporta_manga_valor, end=c(2021,12))
+#seas21<-seasplot(preco_palmer_2021, trend=F, outplot = F)
+#medias21 <- colMeans(seas21$season)
+
+exporta_manga_valor_22 <- as.matrix(tail(exporta_manga_valor,1)) #ajustar mensalmente
+exporta_manga_valor_2022 <- matrix(NA, nrow=12, ncol=1)
+
+for(i in 1:1){
+  exporta_manga_valor_2022[i,1] = exporta_manga_valor_22[i,1]
+}
+  
+#Como só se tem até a semana 12
+medias19 <- medias19[1:12]
+
+matrix = matrix(NA, nrow=12, ncol=2)
+
+for(i in 1:12){
+  matrix[i,1] = min(seas19$season[,i])
+  matrix[i,2] = max(seas19$season[,i])
+}
+
+#time <- c("Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", #"Dezembro")
+#time <-seq(1:12)
+table <- data.frame(meses, matrix[,1], round(medias19,3), matrix[,2], round(tail(exporta_manga_valor_2020,12),3),
+                    round(tail(exporta_manga_valor_2021,12),3), exporta_manga_valor_2022[,1])
+colnames(table) = c('Meses', 'Mínimo', 'Média', 'Máximo', '2020', '2021', 
+                    '2022')
+
+tablea <- table[,-c(5:7)]
+tableb <- table[,-c(2,3,4)]
+
+tablea2 <- melt(tablea, id.var='Meses')
+tableb2 <- melt(tableb, id.var='Meses')
+mycolors <- c("lightblue3", "gray44", "gold")
+
+#Ajusta para Volume
+#Analise de Serie Temporal
+exporta_manga_volume <- dados2[,4]
+exporta_manga_volume<-exporta_manga_volume/1000  #passando de quilo para tonelada
+
+#Ajuste para a variação Mensal do Volume
+
+variacao_volume_20 <-  dados2 %>% filter(ano=='2020')
+variacao_volume_21 <-  dados2 %>% filter(ano=='2021')
+variacao_volume_22 <-  dados2 %>% filter(ano=='2022')
+
+variacao_volume_20 <-  variacao_volume_20[,4]/1000
+variacao_volume_21 <-  variacao_volume_21[,4]/1000
+variacao_volume_22 <-  variacao_volume_22[,4]/1000
+
+#Setando como uma série temporal
+exporta_manga_volume <- ts(exporta_manga_volume, start=c(2012,1), freq=12)
+
+#Tendencia
+trend_volume <- cmav(exporta_manga_volume, outplot=F)
+trend_volume <- tibble(date, trend_volume)
+
+#Sazonalidade
+decompa<-decompose(exporta_manga_volume, type = 'multiplicative')
+sazonal_volume <- decompa$figure
+sazonal_graph_volume <- tibble(meses, sazonal_volume)
+
+#Comparações com os anos e entre as médias/max/min
+
+exporta_manga_volume_2019 <- window(exporta_manga_volume, end=c(2019,12))
+seas19_vol<-seasplot(exporta_manga_volume_2019, trend=F, outplot = F)
+medias19_vol <- colMeans(seas19_vol$season)
+
+exporta_manga_volume_2020 <- window(exporta_manga_volume, end=c(2020,12))
+
+exporta_manga_volume_2021 <- window(exporta_manga_volume, end=c(2021,12))
+
+exporta_manga_volume_22 <- as.matrix(tail(exporta_manga_volume,1)) #ajustar mensalmente
+exporta_manga_volume_2022 <- matrix(NA, nrow=12, ncol=1)
+
+for(i in 1:1){
+  exporta_manga_volume_2022[i,1] = exporta_manga_volume_22[i,1]
+}
+  
+#Como só se tem até a semana 12
+medias19_vol <- medias19_vol[1:12]
+
+matrix_vol = matrix(NA, nrow=12, ncol=2)
+
+for(i in 1:12){
+  matrix_vol[i,1] = min(seas19_vol$season[,i])
+  matrix_vol[i,2] = max(seas19_vol$season[,i])
+}
+
+#time <- c("Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", #"Dezembro")
+#time <-seq(1:12)
+table_volume <- data.frame(meses, round(matrix_vol[,1],0), round(medias19_vol,0), round(matrix_vol[,2],0), round(tail(exporta_manga_volume_2020,12),0),
+round(tail(exporta_manga_volume_2021,12),0), round(exporta_manga_volume_2022[,1],0))
+colnames(table_volume) = c('Meses', 'Mínimo', 'Média', 'Máximo', '2020', '2021', 
+                    '2022')
+
+tablea_vol <- table_volume[,-c(5:7)]
+tableb_vol <- table_volume[,-c(2,3,4)]
+
+tablea2_vol <- melt(tablea_vol, id.var='Meses')
+tableb2_vol <- melt(tableb_vol, id.var='Meses')
+
+
+#Variação Mensal 2021
+
+variacao_volume_2020 <- as.matrix(variacao_volume_20)
+variacao_volume_2021 <- as.matrix(variacao_volume_21)
+variacao_volume_2022 <- matrix(NA, nrow=12, ncol=1)
+
+for(i in 1:1){
+  variacao_volume_2022[i,1] = variacao_volume_22
+}
+
+variacao_21 <- ((variacao_volume_2021/variacao_volume_2020) - 1)*100
+variacao_22 <- ((variacao_volume_2022/variacao_volume_2021) - 1)*100
+
+variacao <- data.frame(meses, variacao_21, variacao_22)
+colnames(variacao) = c('Meses', 'Variação 2021 e 2020', 'Variação 2022 e 2021')
+
+variacaom <- melt(variacao, id.var='Meses')
+
+mycolors2 <- c("orange", "lightblue3")
+
+#Preço Exportação
+
+#Entrando dados no R
+dadosexp <- read.csv2('manga_export_medias_deflacionados.csv', header=T, sep=";", dec=".")
+colnames(dadosexp)[1]<-'Palmer'
+
+#Entrando dados no R - Deflator
+igpdi <- read.csv2('igpdi.csv', 
+                   header=T, sep=";",
+                   dec=".")
+colnames(igpdi)[1]<-'Ano'
+
+igpdi2 <- igpdi %>% filter (Ano >= 2021) 
+igpdi2$date <- seq(as.Date('2021-01-05'),to=data,by='1 week') #ajustar mensalmente
+igpdi2 <- igpdi2 %>% filter(date > "2021-07-27")
+
+dadosexp_comb<-cbind(dadosexp, igpdi2)
+
+#Deflacionar a serie de manga de exportação
+dadosexp_comb$Palmer <- dadosexp_comb[,1]*(tail(dadosexp_comb[,7],1)/dadosexp_comb[,7])
+dadosexp_comb$Tommy_USA <- dadosexp_comb[,2]*(tail(dadosexp_comb[,7],1)/dadosexp_comb[,7])
+dadosexp_comb$Tommy_Europa <- dadosexp_comb[,3]*(tail(dadosexp_comb[,7],1)/dadosexp_comb[,7])
+dadosexp_comb$Kent <- dadosexp_comb[,4]*(tail(dadosexp_comb[,7],1)/dadosexp_comb[,7])
+
+dadosexp_table <- dadosexp_comb %<>%
+  select(c(date, Ano, semana, Palmer, Tommy_USA, Tommy_Europa, Kent))
+
+dadosexp_comb %<>%
+  select(c(date, Palmer, Tommy_USA, Tommy_Europa, Kent))
+
+dadosexp_comb <- melt(dadosexp_comb, id.var='date')
+
+
+#Cambio
+
+#dados6 <- get_market_expectations("monthly", "Câmbio", start_date = "2022-01-01")
+#dados6 <- dados6 %>% filter (baseCalculo == 0) 
+#dates <- dados6$Data[dados6$DataReferencia=='12/2022']
+#cambio_esperado <- dados6$Media[dados6$DataReferencia=='12/2022']
+#cambio_esperado <- round(cambio_esperado,2)
+#dados6 <- data.frame(dates=dates, cambio=cambio_esperado)
+```
+
+Row {data-height=125}
+-----------------------------------------------------------------------
+
+### Volume Exportação em `r strftime(atual, format = "%B")` de 2022 
+``` {r d1}
+num <- 6842
+valueBox(
+  value = paste0(num, " Toneladas"),
+  color = "tomato",
+  icon= "fa-arrow-down")
+```
+
+### Volume Exportação em `r strftime(atual, format = "%B")` de 2021 
+``` {r d2}
+num <- 7636
+valueBox(
+  value = paste0(num, " Toneladas"),
+  icon= "fa-pen")
+```
+
+### Volume Exportação em `r strftime(atual, format = "%B")` de 2020 
+``` {r d3}
+num <- 7035
+valueBox(
+  value = paste0(num, " Toneladas"),
+  icon= "fa-pen")
+```
+
+Row
+-----------------------------------------------------------------------
+
+### Receita de Exportação e Volume Exportado de Manga: 2012 a 2022 {.no-title}
+
+```{r d4, results='', fig.cap='', fig.width=8, fig.height=4, fig.align='center'}
+#Gráfico com Ggplot2
+
+mycolor1 <- "gold"
+mycolor2 <- "red"
+
+g1 <- ggplot(data=dados1) +  #estetica vai valer para todos os geom's
+  geom_col(aes(x=Ano, y=Toneladas, fill="Mil Toneladas"), lwd=1)+
+    scale_fill_manual(values=mycolor1)+
+  geom_line(aes(x=Ano, y=Valor, colour="Milhões de Dólares"), size=2)+
+  scale_colour_manual(values=mycolor2)+
+  labs(y= "US$ Milhões / Mil Ton", x= "Anos", title='Receita de Exportação e Volume Exportado de Manga: 2012 a 2022',
+       caption = "") +
+  scale_y_continuous(limits=c(0, 300), n.breaks = 10, expand = expansion(add=c(0,0.5)))+
+  scale_x_continuous(breaks = seq(2012, 2022, by = 1))+
+  theme_classic()+ #Definindo tema
+  theme(axis.text.x=element_text(angle=0, hjust=0.5, size=8, margin = margin(b=10)),
+        axis.text.y=element_text(hjust=1, size=8, margin = margin(l=20)),
+        axis.title.x = element_text(size=8, face = "bold", margin = margin(b=10)),
+        axis.title.y = element_text(size=8, face = "bold", margin = margin(l=20)),
+        plot.title = element_text(hjust = 0.5, size=12),
+        plot.caption = element_text(hjust = 0, size=12),
+        legend.position = "bottom", legend.title = element_blank(),
+        legend.text=element_text(size=9)) # Definindo posição da legenda
+
+ggplotly(g1) %>%
+  layout(legend = list(
+                      orientation = "h", 
+                      x=0.25, 
+                      y=-0.2,
+                      title=''))
+```
+
+### Principais Destinos da Manga Exportada em Janeiro de 2022 {.no-title}
+
+```{r d5, results='', fig.cap='', fig.width=7, fig.height=4, fig.align='center'}
+
+#Gráfico com Ggplot2
+
+mycolor1 <- "gold"
+
+g10 <- ggplot(data=dados3) +  #estetica vai valer para todos os geom's
+  geom_col(aes(x = reorder(Paises, -Participacao), y= Participacao, fill="% do Total"), lwd=1)+
+    scale_fill_manual(values=mycolor1) +
+  labs(y= "% do Volume Total Exportados", x= "Países", title='Principais Destinos da Manga',
+       caption = "")+
+  scale_y_continuous(limits=c(0, 45), n.breaks = 10, expand = expansion(add=c(0,0.5)))+
+   theme_classic()+ #Definindo tema
+  theme(axis.text.x=element_text(angle=0, hjust=0.5, size=8, margin = margin(b=10)),
+        axis.text.y=element_text(hjust=1, size=8, margin = margin(l=20)),
+        axis.title.x = element_text(size=8, face = "bold", margin = margin(b=10)),
+        axis.title.y = element_text(size=8, face = "bold", margin = margin(l=20)),
+        plot.title = element_text(hjust = 0.5, size=12),
+        plot.caption = element_text(hjust = 0, size=12),
+        legend.position = "bottom", legend.title = element_blank(),
+        legend.text=element_text(size=9)) # Definindo posição da legenda
+
+ggplotly(g10) %>%
+  layout(legend = list(
+                      orientation = "h", 
+                      x=0.4, 
+                      y=-0.2,
+                      title=''))
+```
+
+### Principais vias de exportação da Manga do Brasil: Janeiro de 2022. {.no-title}
+
+```{r d6}
+
+#Gráfico com Ggplot2
+
+g11 <- ggplot(data=dados4) +  #estetica vai valer para todos os geom's
+  geom_col(aes(x = reorder(Vias, -Participacao), y= Participacao, fill="% do Total"), lwd=1)+
+    scale_fill_manual(values=mycolor1) +
+  labs(y= "% de Exportação", x= "Vias", title='Principais vias de exportação',
+       caption = "")+
+  scale_y_continuous(limits=c(0, 100), n.breaks = 10, expand = expansion(add=c(0,0.5)))+
+   theme_classic()+ #Definindo tema
+  theme(axis.text.x=element_text(angle=0, hjust=0.5, size=8, margin = margin(b=10)),
+        axis.text.y=element_text(hjust=1, size=8, margin = margin(l=20)),
+        axis.title.x = element_text(size=8, face = "bold", margin = margin(b=10)),
+        axis.title.y = element_text(size=8, face = "bold", margin = margin(l=20)),
+        plot.title = element_text(hjust = 0.5, size=12),
+        plot.caption = element_text(hjust = 0, size=12),
+        legend.position = "bottom", legend.title = element_blank(),
+        legend.text=element_text(size=9)) # Definindo posição da legenda
+
+ggplotly(g11) %>%
+  layout(legend = list(
+                      orientation = "h", 
+                      x=0.4, 
+                      y=-0.2,
+                      title=''))
+```
+
+Row
+-----------------------------------------------------------------------
+
+### Volume das Exportações de Manga do Brasil: Janeiro de 2022 em comparação com as informações entre 2012-2021 {.no-title}
+
+```{r d7, results='', fig.cap='', fig.align='center'}
+g7 <- ggplot()+
+  geom_col(data=tableb2_vol, aes(x=Meses, y=value, fill=variable), lwd=1,
+           position = "dodge")+
+  scale_fill_manual(values=mycolors)+
+  geom_line(data=tablea2_vol, aes(x=Meses, y=value, colour=variable), linetype = "solid",
+            size = 1)+
+    scale_colour_manual(values = c("red", "chocolate", "darkgreen")) +
+    scale_y_continuous(limits = c(0, 50000), n.breaks = 10)+
+    scale_x_date(date_breaks = "1 month",
+               labels = date_format("%B"))+
+  labs(y= "Toneladas", x= "Meses do Ano", title='Exportações de Manga do Brasil: valores e estatísticas mensais.',
+       caption = "")+
+   theme_minimal()+ #Definindo tema
+  theme(axis.text.x=element_text(angle=35, hjust=0.5, size=8, margin = margin(b=20)),
+        axis.text.y=element_text(hjust=1, size=8, margin = margin(l=20)),
+        axis.title.x = element_text(size=8, face = "bold", margin = margin(b=20)),
+        axis.title.y = element_text(size=8, face = "bold", margin = margin(l=20)),
+        plot.title = element_text(hjust = 0.5, size=12),
+        plot.caption = element_text(hjust = 0, size=12),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        legend.position = "bottom", legend.title = element_blank(),
+        legend.text=element_text(size=9)) # Definindo posição da legenda
+
+ggplotly(g7) %>%
+  layout(legend = list(
+                      orientation = "h", 
+                      x=0.05, 
+                      y=1,
+                      title=''))
+```
+
+### Evolução dos Preços ao Produtor da manga de ME {.no-title}
+
+``` {r d8}
+#Gráfico com Ggplot2
+
+mycolors3 <- c("orange", "lightblue3", "red", "darkgreen")
+
+g9 <- ggplot()+
+  geom_col(data=dadosexp_comb, aes(x=date, y=value, fill=variable), size=2, 
+           width = 5, position = "dodge")+
+  scale_fill_manual(values=mycolors3)+
+  scale_y_continuous(limits = c(0, 4), n.breaks = 4, labels = number_format(accuracy = 0.01, decimal.mark = ","))+
+  scale_x_date(breaks = date_breaks("1 week"),
+               labels = date_format("%W-%y"))+
+  labs(y= "Preços R$", x= "Semanas do Ano", title='Evolução dos Preços ao Produtor da manga de exportação por variedade',
+       caption = "")+
+  theme_minimal()+
+  theme(axis.text.x=element_text(angle=45, hjust=0.5, size=8, margin = margin(b=10)),
+        axis.text.y=element_text(hjust=0.5, size=8, margin = margin(l=20)),
+        axis.title.y = element_text(size=8, face = "bold"),
+        axis.title.x = element_text(size=8, face = "bold"),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        plot.title = element_text(hjust = 0.5, size=12),
+        plot.caption = element_text(hjust = 0, size=14),
+        legend.position = "bottom", legend.title = element_blank(),
+        legend.text=element_text(size=9)) # Definindo posição da legenda
+
+ggplotly(g9) %>%
+  layout(legend = list(
+                      orientation = "h", 
+                      x=0.25, 
+                      y=-0.2,
+                      title=''))
+```
