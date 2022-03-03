@@ -11,7 +11,7 @@ output:
       version: 4
       bootswatch: bootstrap
       navbar-bg: "#183b8c"
-      bg:        "#ffffff"
+      bg:        "#183b8c"
       fg:        "#ffffff"
 #runtime: shiny    
 ---
@@ -60,6 +60,201 @@ date2 <- seq(as.Date('2021-01-01'),to=as.Date('2021-12-01'),by='1 month')
 # Linhas que precisam de ajuste: 71, 104, 107
 ```
 
+DADOS GERAIS
+======================================================================
+```{r database5}
+#Direcionado o R para o Diretorio a ser trabalhado
+setwd('c:/Users/Joao Ricardo Lima/Dropbox/tempecon/dados_manga')
+
+#Inicio do Script
+#Pacotes a serem utilizados
+library(mFilter)
+library(forecast)
+library(tsutils)
+library(seasonal)
+library(ggplot2)
+library(uroot)
+library(tseries)
+library(ggthemes)
+library(dplyr)
+library(tidyverse)
+library(quantmod)
+library(scales)
+library(kableExtra)# complex tables
+library(lmtest)
+library(FinTS)
+library(magrittr)# pipe operations
+library(readxl)
+library(reshape2)
+library(plotly)
+#library(rmarkdown)
+library(bslib)
+
+checkX13()
+
+options(digits=4)
+today <- today <- as.Date("2022-01-01")
+date <- seq(as.Date('2021-01-01'),to=as.Date('2021-12-01'),by='1 month')
+
+#Entrando dados no R
+dados <- read_excel("manga_ibge2020.xlsx", col_names = TRUE)
+dados$produtividade <- round(dados$produtividade,0)
+
+#Gráfico com Ggplot2 Palmer
+
+mycolor1 <- "gold"
+mycolor2 <- "darkgreen"
+mycolor3 <- "blue"
+mycolor4 <- "red"
+```
+
+Row {data-height=150}
+-----------------------------------------------------------------------
+
+### Área Plantada com Manga no Brasil em 2020 
+``` {r}
+num <- 72 
+valueBox(
+  value = paste0(num, " Mil Hectares"),
+#  color = "lightblue3",
+  icon= "fa-pen")
+```
+
+### Produtividade média da Manga no Brasil em 2020 
+``` {r}
+num <- 22
+valueBox(
+  value = paste0( num, " Toneladas/Hectare"),
+#  color = "lightblue3",
+  icon= "fa-pen")
+```
+
+### Volume com Manga produzida no Brasil em 2020 
+``` {r}
+num <- 1.57
+valueBox(
+  value = paste0(format(num, decimal.mark =  ","), " Milhões de Toneladas" ),
+#  color = "lightblue3",
+  icon= "fa-pen")
+```
+
+Row
+-----------------------------------------------------------------------
+
+### Evolução da Area com Manga no Vale do São Francisco: 2016:2020 {.no-title}
+
+```{r ibge1}
+g1 <- ggplot(data=dados) +  #estetica vai valer para todos os geom's
+  geom_col(aes(x=ano, y=area, fill="Area Manga (Hectares)"), lwd=1)+
+  scale_fill_manual(values=mycolor1)+
+  labs(y= "Hectares", x= "Anos", title='Evolução da Area com Manga no Vale do São Francisco: 2016-2020',
+       caption = "Fonte: IBGE (2021)") +
+  scale_y_continuous(limits=c(0, 30000), n.breaks = 6, expand = expansion(add=c(0,0.5)))+
+  theme_classic()+ #Definindo tema
+  theme(axis.text.x=element_text(angle=0, hjust=0.5, size=12, margin = margin(b=5)),
+        axis.text.y=element_text(hjust=1, size=12, margin = margin(l=20)),
+        axis.title.x = element_text(size=12, face = "bold", margin = margin(b=0)),
+        axis.title.y = element_text(size=12, face = "bold", margin = margin(l=20)),
+        plot.title = element_text(hjust = 0.5, size=14),
+        plot.caption = element_text(hjust = 0, size=8),
+        legend.position = "bottom", legend.title = element_blank(),
+        legend.text=element_text(size=12)) # Definindo posição da legenda
+
+ggplotly(g1) %>%
+  layout(legend = list(
+                      orientation = "h", 
+                      x=0.35, 
+                      y=-0.3,
+                      title=''))
+```
+
+### Evolução do Volume com Manga no Vale do São Francisco: 2016-2020 {.no-title}
+
+```{r ibge2}
+g2 <- ggplot(data=dados) +  #estetica vai valer para todos os geom's
+  geom_col(aes(x=ano, y=quantidade/1000, fill="Volume (Mil Toneladas)"), lwd=1)+
+  scale_fill_manual(values=mycolor2)+
+  labs(y= "Mil Toneladas", x= "Anos", title='Evolução do Volume com Manga no Vale do São Francisco: 2016-2020',
+       caption = "Fonte: IBGE (2021)") +
+  scale_y_continuous(limits=c(0, 1000), n.breaks = 6, expand = expansion(add=c(0,0.5)))+
+  theme_classic()+ #Definindo tema
+  theme(axis.text.x=element_text(angle=0, hjust=0.5, size=12, margin = margin(b=5)),
+        axis.text.y=element_text(hjust=1, size=12, margin = margin(l=20)),
+        axis.title.x = element_text(size=12, face = "bold", margin = margin(b=0)),
+        axis.title.y = element_text(size=12, face = "bold", margin = margin(l=20)),
+        plot.title = element_text(hjust = 0.5, size=14),
+        plot.caption = element_text(hjust = 0, size=8),
+        legend.position = "bottom", legend.title = element_blank(),
+        legend.text=element_text(size=12)) # Definindo posição da legenda
+
+ggplotly(g2) %>%
+  layout(legend = list(
+                      orientation = "h", 
+                      x=0.35, 
+                      y=-0.3,
+                      title=''))
+```
+
+Row
+-----------------------------------------------------------------------
+
+### Evolução da Produtividade com Manga no Vale do São Francisco: 2016-2020 {.no-title}
+
+```{r ibge3}
+g3 <- ggplot(data=dados) +  #estetica vai valer para todos os geom's
+  geom_col(aes(x=ano, y=produtividade, fill="Produtividade (Toneladas/Hectares)"), lwd=1)+
+  scale_fill_manual(values=mycolor3)+
+  labs(y= "Produtividade (Ton/Ha)", x= "Anos", title='Evolução da Produtividade com Manga no Vale do São Francisco: 2016-2020',
+       caption = "IBGE (2021)") +
+  scale_y_continuous(limits=c(0, 35), n.breaks = 5, expand = expansion(add=c(0,0.5)))+
+  theme_classic()+ #Definindo tema
+  theme(axis.text.x=element_text(angle=0, hjust=0.5, size=12, margin = margin(b=5)),
+        axis.text.y=element_text(hjust=1, size=12, margin = margin(l=20)),
+        axis.title.x = element_text(size=12, face = "bold", margin = margin(b=0)),
+        axis.title.y = element_text(size=12, face = "bold", margin = margin(l=20)),
+        plot.title = element_text(hjust = 0.5, size=14),
+        plot.caption = element_text(hjust = 0, size=8),
+        legend.position = "bottom", legend.title = element_blank(),
+        legend.text=element_text(size=12)) # Definindo posição da legenda
+
+ggplotly(g3) %>%
+  layout(legend = list(
+                      orientation = "h", 
+                      x=0.35, 
+                      y=-0.3,
+                      title=''))
+```
+
+### Evolução do Valor Bruto da Produção com Manga no Vale do São Francisco: 2016-2020  {.no-title}
+
+```{r ibge4}
+g4 <- ggplot(data=dados) +  #estetica vai valer para todos os geom's
+  geom_col(aes(x=ano, y=vbp/1000, fill="Valor Bruto Produção (Mil R$)"), lwd=1)+
+  scale_fill_manual(values=mycolor4)+
+  labs(y= "VBP (Mil R$)", x= "Anos", title='Evolução do Valor Bruto da Produção com Manga no Vale do São Francisco: 2016-2020',
+       caption = "IBGE (2021)") +
+  scale_y_continuous(limits=c(0, 1200), n.breaks = 5, expand = expansion(add=c(0,0.5)))+
+  theme_classic()+ #Definindo tema
+  theme(axis.text.x=element_text(angle=0, hjust=0.5, size=12, margin = margin(b=5)),
+        axis.text.y=element_text(hjust=1, size=12, margin = margin(l=20)),
+        axis.title.x = element_text(size=12, face = "bold", margin = margin(b=0)),
+        axis.title.y = element_text(size=12, face = "bold", margin = margin(l=20)),
+        plot.title = element_text(hjust = 0.5, size=14),
+        plot.caption = element_text(hjust = 0, size=8),
+        legend.position = "bottom", legend.title = element_blank(),
+        legend.text=element_text(size=12)) # Definindo posição da legenda
+
+ggplotly(g4) %>%
+  layout(legend = list(
+                      orientation = "h", 
+                      x=0.35, 
+                      y=-0.3,
+                      title=''))
+```
+
+
+PALMER {data-navmenu="PREÇOS AO PRODUTOR"}
+======================================================================
 
 ``` {r database1}
 #Direcionado o R para o Diretorio a ser trabalhado
@@ -174,9 +369,6 @@ mycolors2 <- c("orange", "lightblue3")
 #bslib::bs_themer()
 
 ```
-
-PALMER {data-navmenu="PREÇOS AO PRODUTOR"}
-======================================================================
 
 Row {data-height=150}
 -----------------------------------------------------------------------
@@ -1266,7 +1458,7 @@ mycolors2 <- c("orange", "lightblue3")
 Row {data-height=125}
 -----------------------------------------------------------------------
 
-### Volume Comercializado em `r strftime(atual, format = "%B")` de 2022 
+### Volume Comercializado (CEASAS) em `r strftime(atual, format = "%B")` de 2022 
 ``` {r v1}
 num <- tail(round(manga_mespeba$toneladas,0),1)
 valueBox(
@@ -1275,7 +1467,7 @@ valueBox(
   icon= "fa-arrow-down")
 ```
 
-### Volume Comercializado em `r strftime(atual, format = "%B")` de 2021 
+### Volume Comercializado (CEASAS) em `r strftime(atual, format = "%B")` de 2021 
 ``` {r v2}
 num <- 12466
 valueBox(
@@ -1283,7 +1475,7 @@ valueBox(
   icon= "fa-pen")
 ```
 
-### Volume Comercializado em `r strftime(atual, format = "%B")` de 2020 
+### Volume Comercializado (CEASAS) em `r strftime(atual, format = "%B")` de 2020 
 ``` {r v3}
 num <- 9432
 valueBox(
@@ -1303,7 +1495,7 @@ g1 <- ggplot()+
   scale_fill_manual(values=mycolors2)+
   scale_y_continuous(limits = c(0, 350000), n.breaks = 10)+
   scale_x_date(date_breaks = "1 year", labels = date_format("%Y"))+
-  labs(y= "Toneladas", x= "Anos", title='Volume total comercializado de manga: 2017 a 2022',
+  labs(y= "Toneladas", x= "Anos", title='Volume total comercializado de manga (CEASAS): 2017 a 2022',
   caption = "Fonte: PROHORT/CONAB reprocessado pelo Observatório de Mercado de Manga da Embrapa")+
   theme_minimal()+
   theme(axis.text.x=element_text(angle=0, hjust=0.5, size=8, margin = margin(b=20)),
@@ -1336,7 +1528,7 @@ g3 <- ggplot(data=manga_mespeba, aes(x=mes)) +  #estetica vai valer para todos o
   scale_colour_manual("",
                       breaks = c("TONELADAS", "TENDÊNCIA"),
                       values = c("black", "tomato"))  +
-  labs(y= "Quantidade (T)", x= "Meses do Ano", title='Tendência do Volume comercializado de manga',
+  labs(y= "Quantidade (T)", x= "Meses do Ano", title='Tendência do Volume comercializado de manga (CEASAS)',
        caption = "Fonte: CONAB reprocessado pelo Observatório de Mercado de Manga da Embrapa")+
   scale_y_continuous(limits=c(0,25000), n.breaks = 10, expand = expansion(add=c(0,0.5)))+
   scale_x_date(date_breaks = "1 year",
@@ -1370,7 +1562,7 @@ g4 <- ggplot(data=sazonalpeba_graph)+
                      labels=number_format(accuracy = 0.1)) +
   scale_x_date(date_breaks = "1 month",
                labels = date_format("%b"))+
-  labs(y= "", x= "Meses de cada Ano", title='Sazonalidade do Volume comercializado de manga',
+  labs(y= "", x= "Meses de cada Ano", title='Sazonalidade do Volume comercializado de manga (CEASAS)',
        caption = "Observatório de Mercado de Manga da Embrapa")+
   theme_minimal()+
   theme(axis.text.x=element_text(angle=0, hjust=0.5, size=8, margin = margin(b=20)),
@@ -1410,7 +1602,7 @@ g5 <- ggplot()+
   scale_y_continuous(limits = c(0, 22000), n.breaks = 10)+
   scale_x_date(date_breaks = "1 month",
                labels = date_format("%B"))+
-  labs(y= "Toneladas", x= "Meses do Ano", title='Estatísticas sobre a Evolução da Oferta de manga',
+  labs(y= "Toneladas", x= "Meses do Ano", title='Estatísticas sobre a Evolução da Oferta de manga (CEASAS)',
        caption = "")+
   theme_minimal()+
   theme(axis.text.x=element_text(angle=35, hjust=0.5, size=8, margin = margin(b=20)),
@@ -1443,7 +1635,7 @@ g2 <- ggplot()+
   scale_y_continuous(limits = c(-40, 60), n.breaks = 10)+
   scale_x_date(date_breaks = "1 month",
                labels = date_format("%B"))+
-  labs(y= "Variação Percentual (%)", x= "Meses do Ano", title='Variação do Volume comercializado de manga',
+  labs(y= "Variação Percentual (%)", x= "Meses do Ano", title='Variação do Volume comercializado de manga (CEASAS)',
        caption = "Fonte: Observatório de Mercado de Manga da Embrapa")+
   theme_minimal()+
   theme(axis.text.x=element_text(angle=35, hjust=0.5, size=8, margin = margin(b=20)),
@@ -1464,3 +1656,4 @@ ggplotly(g2) %>%
                       y=-0.25,
                       title=''))
 ```
+
