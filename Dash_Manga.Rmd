@@ -1331,11 +1331,11 @@ ggplotly(g1) %>%
 #Gráfico com Ggplot2 - Tendencia
 
 g3 <- ggplot(data=manga_mespeba, aes(x=mes)) +  #estetica vai valer para todos os geom's
-  geom_line(aes(y=toneladas, colour="TONELADAS"), lwd=1)+
+  geom_line(aes(y=toneladas, colour="TONELADAS"), lwd=0.5)+
   geom_line(aes(y=trend_peba, colour="TENDÊNCIA"), lwd=1)+
   scale_colour_manual("",
                       breaks = c("TONELADAS", "TENDÊNCIA"),
-                      values = c("blue", "red")) +
+                      values = c("black", "tomato"))  +
   labs(y= "Quantidade (T)", x= "Meses do Ano", title='Tendência do Volume comercializado de manga',
        caption = "Fonte: CONAB reprocessado pelo Observatório de Mercado de Manga da Embrapa")+
   scale_y_continuous(limits=c(0,25000), n.breaks = 10, expand = expansion(add=c(0,0.5)))+
