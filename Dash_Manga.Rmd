@@ -175,7 +175,7 @@ mycolors2 <- c("orange", "lightblue3")
 
 ```
 
-PALMER
+PALMER {data-navmenu="PREÇOS AO PRODUTOR"}
 ======================================================================
 
 Row {data-height=150}
@@ -348,7 +348,7 @@ ggplotly(g4) %>%
                       title=''))
 ```
 
-TOMMY
+TOMMY {data-navmenu="PREÇOS AO PRODUTOR"}
 ======================================================================
 
 ``` {r database2}
