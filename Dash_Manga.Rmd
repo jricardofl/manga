@@ -1085,7 +1085,7 @@ Row {data-height=125}
 
 ### Volume Exportação em `r strftime(atual, format = "%B")` de 2022 
 ``` {r d1}
-num <- 6842
+num <- 6.842
 valueBox(
   value = paste0(num, " Toneladas"),
   color = "tomato",
@@ -1094,7 +1094,7 @@ valueBox(
 
 ### Volume Exportação em `r strftime(atual, format = "%B")` de 2021 
 ``` {r d2}
-num <- 7636
+num <- 7.636
 valueBox(
   value = paste0(num, " Toneladas"),
   icon= "fa-pen")
@@ -1102,7 +1102,7 @@ valueBox(
 
 ### Volume Exportação em `r strftime(atual, format = "%B")` de 2020 
 ``` {r d3}
-num <- 7035
+num <- 7.035
 valueBox(
   value = paste0(num, " Toneladas"),
   icon= "fa-pen")
@@ -1460,7 +1460,7 @@ Row {data-height=125}
 
 ### Volume Comercializado (CEASAS) em `r strftime(atual, format = "%B")` de 2022 
 ``` {r v1}
-num <- tail(round(manga_mespeba$toneladas,0),1)
+num <- 11.631
 valueBox(
   value = paste0(num, " Toneladas"),
   color = "tomato",
@@ -1469,7 +1469,7 @@ valueBox(
 
 ### Volume Comercializado (CEASAS) em `r strftime(atual, format = "%B")` de 2021 
 ``` {r v2}
-num <- 12466
+num <- 12.466
 valueBox(
   value = paste0(num, " Toneladas"),
   icon= "fa-pen")
@@ -1477,7 +1477,7 @@ valueBox(
 
 ### Volume Comercializado (CEASAS) em `r strftime(atual, format = "%B")` de 2020 
 ``` {r v3}
-num <- 9432
+num <- 9.432
 valueBox(
   value = paste0(num, " Toneladas"),
   icon= "fa-pen")
