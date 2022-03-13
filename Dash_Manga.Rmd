@@ -1670,3 +1670,93 @@ ggplotly(g2) %>%
 
 EMPREGO
 ======================================================================
+
+```{r database6}
+#Direcionado o R para o Diretorio a ser trabalhado
+setwd('c:/Users/Joao Ricardo Lima/Dropbox/tempecon/dados_caged')
+
+anterior <- as.Date("2022-01-01")
+atual <-  as.Date("2022-02-01")
+#today <- as.Date("2022-02-11")
+today <- as.Date("2022-03-11")
+
+#Inicio do Script
+#Pacotes a serem utilizados 
+library(ggplot2)
+library(scales)
+library(plotly)
+
+#Entrando dados no R
+dados1 <- read.csv2('janeiro_2022.csv', header=T, sep=";", dec = ".")
+colnames(dados1)[1] <- 'date'
+dados1$date <- seq(as.Date('2021-01-01'),to=anterior,by='1 month')
+```
+
+Row {data-height=125}
+-----------------------------------------------------------------------
+
+### pela mangicultura em `r strftime(mesatual, format = "%B")` de 2022 
+``` {r emp1}
+num <- 516
+valueBox(
+  value = paste0(num, " Contratados"),
+  color = "green",
+  icon= "fa-arrow-up")
+```
+
+### pela mangicultura em `r strftime(mesatual, format = "%B")` de 2022 
+``` {r emp2}
+num <- 742
+valueBox(
+  value = paste0(num, " Demitidos"),
+  color = "tomato",
+  icon= "fa-arrow-down")
+```
+
+### Saldo Gerado pela mangicultura em `r strftime(mesatual, format = "%B")` de 2022 
+``` {r emp3}
+num <- -226
+valueBox(
+  value = paste0(num, " Empregos"),
+  color = "tomato",
+  icon= "fa-pen")
+```
+
+Row
+-----------------------------------------------------------------------
+
+### Evolução do saldo de Empregos gerados na manga {.no-title}
+
+```{r emp4}
+#Gráfico com Ggplot2
+
+mycolor1 <- "gold"
+
+g1 <- ggplot(data=dados1) +  #estetica vai valer para todos os geom's
+  geom_col(aes(x=date, y=Saldo_Manga, fill="Saldo Manga"), lwd=1)+
+    scale_fill_manual(values=mycolor1)+
+    labs(y= "Saldo de Emprego (unidade)", x= "Meses do Ano", title='',
+       caption = "")+
+    scale_y_continuous(limits=c(-1600, 1600), n.breaks = 10, expand = expansion(add=c(0,0.5)))+
+    scale_x_date(date_breaks = "2 month",
+               labels = date_format("%b/%y"))+
+  theme_minimal()+ #Definindo tema
+  theme(axis.text.x=element_text(angle=0, hjust=0.5, size=14, margin = margin(b=20)),
+        axis.text.y=element_text(hjust=1, size=14, margin = margin(l=20)),
+        axis.title.x = element_text(size=14, face = "bold", margin = margin(b=20)),
+        axis.title.y = element_text(size=14, face = "bold", margin = margin(l=20)),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        plot.title = element_text(hjust = 0.5, size=16, face="italic"),
+        plot.caption = element_text(hjust = 0, size=12),
+        legend.position = "bottom", legend.title = element_blank(),
+        legend.text=element_text(size=12)) # Definindo posição da legenda
+
+ggplotly(g1) %>%
+  layout(legend = list(
+                      orientation = "h", 
+                      x=0.45, 
+                      y=-0.25,
+                      title=''))
+```
+
