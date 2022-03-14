@@ -456,7 +456,7 @@ Fonte: Observatório de Mercado de Manga da Embrapa
 <br>
 <br>
 
-## Valor das Exportações de Manga do Brasil: Janeiro de 2022 em comparação com as informações entre 2012-2021 {.tabset .tabset-fade}
+## Valor das Exportações de Manga do Brasil: `r strftime(atual, format = "%B de %Y")` em comparação com as informações entre 2012-2021 {.tabset .tabset-fade}
 
 <br>
 <br>
@@ -610,7 +610,7 @@ Fonte: Observatório de Mercado de Manga da Embrapa
 <br>
 <br>
 
-## Volume das Exportações de Manga do Brasil: Janeiro de 2022 em comparação com as informações entre 2012-2021 {.tabset .tabset-fade}
+## Volume das Exportações de Manga do Brasil: `r strftime(atual, format = "%B de %Y")` em comparação com as informações entre 2012-2021 {.tabset .tabset-fade}
 
 <br>
 <br>
@@ -805,7 +805,7 @@ Fonte: CEPEA reprocessado pelo Observatório de Mercado de Manga da Embrapa
 <br>
 <br>
 
-# 5. Principais destinos de exportação da Manga do Brasil: Janeiro de 2022. {.tabset .tabset-fade}
+# 5. Principais destinos de exportação da Manga do Brasil: `r strftime(atual, format = "%B de %Y")`. {.tabset .tabset-fade}
 
 <br>
 <br>
@@ -864,7 +864,7 @@ Fonte: COMEXSTAT reprocessado pelo Observatório de Mercado de Manga da Embrapa
 <br>
 <br>
 
-# 6. Principais vias de exportação da Manga do Brasil: Janeiro de 2022. {.tabset .tabset-fade}
+# 6. Principais vias de exportação da Manga do Brasil: `r strftime(atual, format = "%B de %Y")`. {.tabset .tabset-fade}
 
 <br>
 <br>
@@ -920,7 +920,7 @@ Fonte: COMEXSTAT reprocessado pelo Observatório de Mercado de Manga da Embrapa
 <br>
 <br>
 
-# 7. Unidade da Federação da Manga exportada do Brasil: Janeiro de 2022. {.tabset .tabset-fade}
+# 7. Unidade da Federação da Manga exportada do Brasil: `r strftime(atual, format = "%B de %Y")`. {.tabset .tabset-fade}
 
 <br>
 <br>
