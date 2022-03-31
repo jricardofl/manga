@@ -1674,7 +1674,7 @@ EMPREGO
 #Direcionado o R para o Diretorio a ser trabalhado
 setwd('c:/Users/Joao Ricardo Lima/Dropbox/tempecon/dados_caged')
 
-anterior <- as.Date("2022-01-01")
+anterior <- as.Date("2022-02-01")
 atual <-  as.Date("2022-02-01")
 #today <- as.Date("2022-02-11")
 today <- as.Date("2022-03-11")
@@ -1686,13 +1686,13 @@ library(scales)
 library(plotly)
 
 #Entrando dados no R
-dados1 <- read.csv2('janeiro_2022.csv', header=T, sep=";", dec = ".")
+dados1 <- read.csv2('fevereiro_2022.csv', header=T, sep=";", dec = ".")
 colnames(dados1)[1] <- 'date'
 dados1$date <- seq(as.Date('2021-01-01'),to=anterior,by='1 month')
 
 #Entrando com o restante dos dados
 
-load("janeiro_22_caged.RData")
+load("fevereiro_22_caged.RData")
 
 #dados_01_vsf$sexo <- lapply(dados_01_vsf$sexo, factor)
 
@@ -1736,30 +1736,30 @@ subclasse_positivos <- mutate(subclasse_positivos,
 Row {data-height=125}
 -----------------------------------------------------------------------
 
-### pela mangicultura em `r strftime(mesatual, format = "%B")` de 2022 
+### pela mangicultura em `r strftime(atual, format = "%B")` de 2022 
 ``` {r emp1}
-num <- 516
+num <- 687
 valueBox(
   value = paste0(num, " Contratados"),
   color = "green",
   icon= "fa-arrow-up")
 ```
 
-### pela mangicultura em `r strftime(mesatual, format = "%B")` de 2022 
+### pela mangicultura em `r strftime(atual, format = "%B")` de 2022 
 ``` {r emp2}
-num <- 742
+num <- 610
 valueBox(
   value = paste0(num, " Demitidos"),
   color = "tomato",
   icon= "fa-arrow-down")
 ```
 
-### Saldo Gerado pela mangicultura em `r strftime(mesatual, format = "%B")` de 2022 
+### Saldo Gerado pela mangicultura em `r strftime(atual, format = "%B")` de 2022 
 ``` {r emp3}
-num <- -226
+num <- 77
 valueBox(
   value = paste0(num, " Empregos"),
-  color = "tomato",
+  color = "green",
   icon= "fa-pen")
 ```
 
@@ -1779,10 +1779,10 @@ g1 <- ggplot(data=dados1) +  #estetica vai valer para todos os geom's
     labs(y= "Saldo de Emprego (unidade)", x= "Meses do Ano", title='Evolução do saldo de Empregos gerados na mangicultura',
        caption = "")+
     scale_y_continuous(limits=c(-1600, 1600), n.breaks = 10, expand = expansion(add=c(0,0.5)))+
-    scale_x_date(date_breaks = "2 month",
+    scale_x_date(date_breaks = "1 month", expand=c(0,0),
                labels = date_format("%b/%y"))+
   theme_minimal()+ #Definindo tema
-  theme(axis.text.x=element_text(angle=0, hjust=0.5, size=10, margin = margin(b=5)),
+  theme(axis.text.x=element_text(angle=35, hjust=0.5, size=10, margin = margin(b=5)),
         axis.text.y=element_text(hjust=1, size=10, margin = margin(l=20)),
         axis.title.x = element_text(size=10, face = "bold", margin = margin(b=5)),
         axis.title.y = element_text(size=10, face = "bold", margin = margin(l=20)),
@@ -1835,6 +1835,7 @@ Row
 
 g3 <- ggplot(data=subclasse_positivos, aes(x=idade))+
   geom_histogram(binwidth=3, fill="#69b3a2", color="#e9ecef", alpha=0.9)+
+    scale_x_continuous(limits=c(18, 65), n.breaks = 10, expand = expansion(add=c(0,0.5)))+
     labs(y= "Contratados Manga - VSF", x= "Idades", title='Distribuição dos empregos gerados por idade',
        caption = "")+
   theme_minimal() +
@@ -1860,7 +1861,7 @@ ggplotly(g3)
 
 g4 <- ggplot(data = subclasse_positivos, aes(x = grau_instrucao, y = ..count..)) +
   geom_bar(fill='#1e4971')+
-    scale_y_continuous(limits=c(0, 200), n.breaks = 10, expand = expansion(add=c(0,0.5)))+
+    scale_y_continuous(limits=c(0, 300), n.breaks = 10, expand = expansion(add=c(0,0.5)))+
 labs(y= "Contratados Manga - VSF", x= "Grau de Instrução", title='Grau de Instrução dos empregos gerados',
        caption = "")+
   theme_minimal() +
