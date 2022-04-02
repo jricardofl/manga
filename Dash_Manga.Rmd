@@ -93,6 +93,8 @@ library(reshape2)
 library(plotly)
 #library(rmarkdown)
 library(bslib)
+library(gridExtra)# multiple grid-based plots on a page
+library(patchwork)
 
 checkX13()
 
@@ -112,7 +114,7 @@ mycolor3 <- "blue"
 mycolor4 <- "red"
 ```
 
-Row {data-height=120}
+Row {data-height=150}
 -----------------------------------------------------------------------
 
 ### Área Plantada com Manga no Brasil em 2020 
@@ -142,10 +144,10 @@ valueBox(
   icon= "fa-pen")
 ```
 
-Row {data-height=700, .tabset}
+Row
 -----------------------------------------------------------------------
 
-### Area Plantada com Manga - V. S. Francisco
+### Area Plantada com Manga - V. S. Francisco {.no-title}
 
 ```{r ibge1}
 g1 <- ggplot(data=dados) +  #estetica vai valer para todos os geom's
@@ -162,7 +164,7 @@ g1 <- ggplot(data=dados) +  #estetica vai valer para todos os geom's
         plot.title = element_text(hjust = 0.5, size=14),
         plot.caption = element_text(hjust = 0, size=8),
         legend.position = "bottom", legend.title = element_blank(),
-        legend.text=element_text(size=12)) # Definindo posição da legenda
+        legend.text=element_text(size=12))
 
 ggplotly(g1) %>%
   layout(legend = list(
@@ -172,7 +174,7 @@ ggplotly(g1) %>%
                       title=''))
 ```
 
-### Volume Produzidos de Manga -  V. S. Francisco
+### Volume Produzido de Manga -  V. S. Francisco {.no-title}
 
 ```{r ibge2}
 g2 <- ggplot(data=dados) +  #estetica vai valer para todos os geom's
@@ -199,7 +201,10 @@ ggplotly(g2) %>%
                       title=''))
 ```
 
-### Produtividade da Manga -  V. S. Francisco
+Row
+-----------------------------------------------------------------------
+
+### Produtividade da Manga -  V. S. Francisco {.no-title}
 
 ```{r ibge3}
 g3 <- ggplot(data=dados) +  #estetica vai valer para todos os geom's
@@ -226,7 +231,7 @@ ggplotly(g3) %>%
                       title=''))
 ```
 
-### Valor Bruto da Produção com Manga -  V. S. Francisco 
+### Valor Bruto da Produção com Manga -  V. S. Francisco {.no-title}
 
 ```{r ibge4}
 g4 <- ggplot(data=dados) +  #estetica vai valer para todos os geom's
@@ -405,7 +410,8 @@ valueBox(
 Row {data-height=700, .tabset}
 -----------------------------------------------------------------------
 
-### Mínimo, Máximo, Media e preços de 2020 a 2022 de Manga Palmer 
+### Mínimo, Máximo, Media e Preços de Palmer
+
 ```{r palmer3, results='', fig.cap='', fig.width=6, fig.height=4, fig.align='center'}
 
 g1 <- ggplot()+
@@ -417,7 +423,7 @@ g1 <- ggplot()+
   scale_colour_manual(values = c("red", "chocolate", "darkgreen")) +
   scale_y_continuous(limits = c(0, 8), n.breaks = 8, labels = number_format(accuracy = 0.01,
                                                        decimal.mark = ","))+
-  scale_x_continuous(breaks = seq(1, 52, by = 2))+
+  scale_x_continuous(breaks = seq(1, 52, by = 1))+
   labs(y= "Preço R$", x= "Semanas de cada Ano", title='Mínimo, Máximo, Média e preços de 2020 a 2022 de Manga Palmer ao produtor',
        caption = "Fonte: CEPEA reprocessado pelo Observatório de Mercado de Manga da Embrapa")+
   theme_minimal()+
@@ -435,12 +441,12 @@ g1 <- ggplot()+
 ggplotly(g1) %>%
   layout(legend = list(
                       orientation = "h", 
-                      x=0.4, 
+                      x=0.35, 
                       y=-0.2,
                       title=''))
 ```
 
-### Variação Semanal em 2020 e 2021 de Manga Palmer
+### Variação Semanal do Preços
 
 ```{r palmer5, results='', fig.cap='', fig.width=5, fig.height=4}
 
@@ -448,7 +454,7 @@ g2 <- ggplot()+
   geom_col(data=variacao, aes(x=Semanas, y=value, fill=variable), size=2, width = 0.9, position = "dodge")+
   scale_fill_manual(values=mycolors2)+
   scale_y_continuous(labels = number_format(accuracy = 0.01, decimal.mark = ","))+
-  scale_x_continuous(breaks = seq(1, 52, by = 2))+
+  scale_x_continuous(breaks = seq(1, 52, by = 1))+
   labs(y= "Variação Percentual", x= "Semanas do Ano", title='Variação Semanal de preços de Manga Palmer ao produtor',
        caption = "Fonte: Observatório de Mercado de Manga da Embrapa")+
   theme_minimal()+
@@ -466,13 +472,12 @@ g2 <- ggplot()+
 ggplotly(g2) %>%
   layout(legend = list(
                       orientation = "h", 
-                      x=0.35, 
+                      x=0.45, 
                       y=-0.2,
                       title=''))
 ```
 
-
-### Preço e Tendência de Manga Palmer
+### Preço e Tendência de Palmer
 
 ```{r palmer1, results='', fig.cap='', fig.width=6, fig.height=4}
 #Gráfico com Ggplot2
@@ -487,8 +492,8 @@ g3 <- ggplot(data=dadosp, aes(x=date)) +  #estetica vai valer para todos os geom
        caption = "Fonte: CEPEA reprocessado pelo Observatório de Mercado de Manga da Embrapa") +
   scale_y_continuous(limits=c(0,8), n.breaks = 9, expand = expansion(add=c(0,0.5)), 
                      labels=number_format(accuracy = 0.01, decimal.mark = ","))+
-  scale_x_date(date_breaks = "1 year",
-               labels = date_format("%Y"))+
+  scale_x_date(date_breaks = "6 months",
+               labels = date_format("%b-%Y"))+
   theme_classic()+ #Definindo tema
   theme(axis.text.x=element_text(angle=0, hjust=0.5, size=8, margin = margin(b=10)),
         axis.text.y=element_text(hjust=1, size=8, margin = margin(l=10)),
@@ -503,12 +508,12 @@ g3 <- ggplot(data=dadosp, aes(x=date)) +  #estetica vai valer para todos os geom
 ggplotly(g3) %>%
   layout(legend = list(
                       orientation = "h", 
-                      x=0.4, 
+                      x=0.45, 
                       y=-0.2,
                       title=''))
 ```
 
-### Sazonalidade de Manga Palmer 
+### Sazonalidade de Palmer
 
 ```{r palmer2, results='', fig.cap='', fig.width=5, fig.height=4, fig.align='center'}
 #Decompor a Série
@@ -517,7 +522,7 @@ g4 <- ggplot(data=sazonal_graph)+
   geom_line(aes(x=semanas, y=sazonalidade), color="cornflowerblue", size=1.2)+
   scale_y_continuous(limits=c(0,1.8), n.breaks = 5, expand = expansion(add=c(0,0.5)), 
                      labels=number_format(accuracy = 0.01, decimal.mark = ","))+
-  scale_x_continuous(breaks = seq(1, 52, by = 2))+
+  scale_x_continuous(breaks = seq(1, 52, by = 1))+
   labs(y= "", x= "Semanas de cada Ano", title='Sazonalidade do preço de Manga Palmer',
        caption = "Fonte: Observatório de Mercado de Manga da Embrapa")+
   theme_classic()+
@@ -688,7 +693,7 @@ valueBox(
 Row {data-height=700, .tabset}
 -----------------------------------------------------------------------
 
-### Mínimo, Máximo, Media e preços de 2020 a 2022 de Manga Tommy {.no-title}
+###  Mínimo, Máximo, Media e Preços de Tommy
 
 ```{r tommy3, results='', fig.cap='', fig.width=6, fig.height=4, fig.align='center'}
 
@@ -701,7 +706,7 @@ g5 <- ggplot()+
     scale_colour_manual(values = c("red", "chocolate", "darkgreen")) +
     scale_y_continuous(limits = c(0, 8), n.breaks = 8, labels = number_format(accuracy = 0.01,
                                                                               decimal.mark = ","))+
-    scale_x_continuous(breaks = seq(1, 52, by = 2))+
+    scale_x_continuous(breaks = seq(1, 52, by = 1))+
     labs(y= "Preço R$", x= "Semanas de cada Ano", title='Mínimo, Máximo, Média e preços de 2020 a 2022 de Manga Tommy ao produtor',
          caption = "Fonte: CEPEA reprocessado pelo Observatório de Mercado de Manga da Embrapa")+
     theme_minimal()+
@@ -719,12 +724,12 @@ g5 <- ggplot()+
 ggplotly(g5) %>%
   layout(legend = list(
                       orientation = "h", 
-                      x=0.4, 
+                      x=0.35, 
                       y=-0.2,
                       title=''))
 ```
 
-### Variação Semanal em 2020 e 2021 de Manga Tommy {.no-title}
+### Variação Semanal do Preços
 
 ```{r tommy5, results='', fig.cap='', fig.width=5, fig.height=4}
 
@@ -732,7 +737,7 @@ g6 <- ggplot()+
     geom_col(data=variacao, aes(x=Semanas, y=value, fill=variable), size=2, width = 0.9, position = "dodge")+
     scale_fill_manual(values=mycolors2)+
     scale_y_continuous(labels = number_format(accuracy = 0.01, decimal.mark = ","))+
-    scale_x_continuous(breaks = seq(1, 52, by = 2))+
+    scale_x_continuous(breaks = seq(1, 52, by = 1))+
     labs(y= "Variação Percentual", x= "Semanas do Ano", title='Variação Semanal de preços de Manga Tommy ao produtor',
          caption = "Fonte: Observatório de Mercado de Manga da Embrapa")+
     theme_minimal()+
@@ -750,12 +755,12 @@ g6 <- ggplot()+
 ggplotly(g6) %>%
   layout(legend = list(
                       orientation = "h", 
-                      x=0.35, 
+                      x=0.45, 
                       y=-0.2,
                       title=''))
 ```
 
-### Preço e Tendência de Manga Tommy {.no-title}
+### Preço e Tendência de Tommy
 
 ```{r tommy1, results='', fig.cap='', fig.width=6, fig.height=4}
 #Gráfico com Ggplot2
@@ -770,8 +775,8 @@ g7 <- ggplot(data=dadosp, aes(x=date)) +  #estetica vai valer para todos os geom
          caption = "Fonte: CEPEA reprocessado pelo Observatório de Mercado de Manga da Embrapa") +
     scale_y_continuous(limits=c(0,8), n.breaks = 9, expand = expansion(add=c(0,0.5)), 
                        labels=number_format(accuracy = 0.01, decimal.mark = ","))+
-    scale_x_date(date_breaks = "1 year",
-                 labels = date_format("%Y"))+
+    scale_x_date(date_breaks = "6 months",
+                 labels = date_format("%b-%Y"))+
     theme_classic()+ #Definindo tema
     theme(axis.text.x=element_text(angle=0, hjust=0.5, size=8, margin = margin(b=10)),
           axis.text.y=element_text(hjust=1, size=8, margin = margin(l=10)),
@@ -786,12 +791,12 @@ g7 <- ggplot(data=dadosp, aes(x=date)) +  #estetica vai valer para todos os geom
 ggplotly(g7) %>%
   layout(legend = list(
                       orientation = "h", 
-                      x=0.4, 
+                      x=0.45, 
                       y=-0.2,
                       title=''))
 ```
 
-### Sazonalidade de Manga Tommy {.no-title}
+### Sazonalidade de Tommy
   
 ```{r tommy2, results='', fig.cap='', fig.width=5, fig.height=4, fig.align='center'}
 #Decompor a Série
@@ -800,7 +805,7 @@ g8 <- ggplot(data=sazonal_graph)+
     geom_line(aes(x=semanas, y=sazonalidade), color="cornflowerblue", size=1.2)+
     scale_y_continuous(limits=c(0,1.8), n.breaks = 5, expand = expansion(add=c(0,0.5)), 
                        labels=number_format(accuracy = 0.01, decimal.mark = ","))+
-    scale_x_continuous(breaks = seq(1, 52, by = 2))+
+    scale_x_continuous(breaks = seq(1, 52, by = 1))+
     labs(y= "", x= "Semanas de cada Ano", title='Sazonalidade do preço de Manga Tommy',
          caption = "Fonte: Observatório de Mercado de Manga da Embrapa")+
     theme_classic()+
