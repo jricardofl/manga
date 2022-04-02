@@ -65,6 +65,7 @@ mes <- 2
 
 DADOS GERAIS
 ======================================================================
+
 ```{r database5}
 #Direcionado o R para o Diretorio a ser trabalhado
 setwd('c:/Users/Joao Ricardo Lima/Dropbox/tempecon/dados_manga')
@@ -111,7 +112,7 @@ mycolor3 <- "blue"
 mycolor4 <- "red"
 ```
 
-Row {data-height=150}
+Row {data-height=120}
 -----------------------------------------------------------------------
 
 ### Área Plantada com Manga no Brasil em 2020 
@@ -141,10 +142,10 @@ valueBox(
   icon= "fa-pen")
 ```
 
-Row
+Row {data-height=700, .tabset}
 -----------------------------------------------------------------------
 
-### Evolução da Area com Manga no Vale do São Francisco: 2016:2020 {.no-title}
+### Area Plantada com Manga - V. S. Francisco
 
 ```{r ibge1}
 g1 <- ggplot(data=dados) +  #estetica vai valer para todos os geom's
@@ -171,7 +172,7 @@ ggplotly(g1) %>%
                       title=''))
 ```
 
-### Evolução do Volume com Manga no Vale do São Francisco: 2016-2020 {.no-title}
+### Volume Produzidos de Manga -  V. S. Francisco
 
 ```{r ibge2}
 g2 <- ggplot(data=dados) +  #estetica vai valer para todos os geom's
@@ -198,10 +199,7 @@ ggplotly(g2) %>%
                       title=''))
 ```
 
-Row
------------------------------------------------------------------------
-
-### Evolução da Produtividade com Manga no Vale do São Francisco: 2016-2020 {.no-title}
+### Produtividade da Manga -  V. S. Francisco
 
 ```{r ibge3}
 g3 <- ggplot(data=dados) +  #estetica vai valer para todos os geom's
@@ -228,7 +226,7 @@ ggplotly(g3) %>%
                       title=''))
 ```
 
-### Evolução do Valor Bruto da Produção com Manga no Vale do São Francisco: 2016-2020  {.no-title}
+### Valor Bruto da Produção com Manga -  V. S. Francisco 
 
 ```{r ibge4}
 g4 <- ggplot(data=dados) +  #estetica vai valer para todos os geom's
@@ -254,7 +252,6 @@ ggplotly(g4) %>%
                       y=-0.3,
                       title=''))
 ```
-
 
 PALMER {data-navmenu="PREÇOS AO PRODUTOR"}
 ======================================================================
@@ -375,7 +372,7 @@ mycolors2 <- c("orange", "lightblue3")
 
 ```
 
-Row {data-height=150}
+Row {data-height=120}
 -----------------------------------------------------------------------
 
 ### Preço de Palmer na Semana `r strftime(data, format = "%V")` de 2022 
@@ -405,10 +402,10 @@ valueBox(
   icon= "fa-pen")
 ```
 
-Row
+Row {data-height=700, .tabset}
 -----------------------------------------------------------------------
 
-### Mínimo, Máximo, Media e preços de 2020 a 2022 de Manga Palmer {.no-title}
+### Mínimo, Máximo, Media e preços de 2020 a 2022 de Manga Palmer 
 ```{r palmer3, results='', fig.cap='', fig.width=6, fig.height=4, fig.align='center'}
 
 g1 <- ggplot()+
@@ -438,12 +435,12 @@ g1 <- ggplot()+
 ggplotly(g1) %>%
   layout(legend = list(
                       orientation = "h", 
-                      x=0.2, 
-                      y=1.05,
+                      x=0.4, 
+                      y=-0.2,
                       title=''))
 ```
 
-### Variação Semanal em 2020 e 2021 de Manga Palmer {.no-title}
+### Variação Semanal em 2020 e 2021 de Manga Palmer
 
 ```{r palmer5, results='', fig.cap='', fig.width=5, fig.height=4}
 
@@ -475,10 +472,7 @@ ggplotly(g2) %>%
 ```
 
 
-Row
------------------------------------------------------------------------
-
-### Preço e Tendência de Manga Palmer {.no-title}
+### Preço e Tendência de Manga Palmer
 
 ```{r palmer1, results='', fig.cap='', fig.width=6, fig.height=4}
 #Gráfico com Ggplot2
@@ -514,7 +508,7 @@ ggplotly(g3) %>%
                       title=''))
 ```
 
-### Sazonalidade de Manga Palmer {.no-title}
+### Sazonalidade de Manga Palmer 
 
 ```{r palmer2, results='', fig.cap='', fig.width=5, fig.height=4, fig.align='center'}
 #Decompor a Série
@@ -533,6 +527,7 @@ g4 <- ggplot(data=sazonal_graph)+
         axis.title.x = element_text(size=8, face = "bold"),
         panel.grid.major = element_blank(),
         panel.grid.minor = element_blank(),
+        plot.title = element_text(hjust = 0.5, size=12),
         plot.caption = element_text(hjust = 0, size=8),
         legend.position = "bottom", legend.title = element_blank(),
         legend.text=element_text(size=8)) # Definindo posição da legenda
@@ -660,7 +655,7 @@ variacao <- melt(variacao, id.var='Semanas')
 mycolors2 <- c("orange", "lightblue3")
 ```
 
-Row {data-height=150}
+Row {data-height=120}
 -----------------------------------------------------------------------
 
 ### Preço de Tommy na Semana `r strftime(data, format = "%V")` de 2022
@@ -690,7 +685,7 @@ valueBox(
   icon= "fa-pen")
 ```
 
-Row
+Row {data-height=700, .tabset}
 -----------------------------------------------------------------------
 
 ### Mínimo, Máximo, Media e preços de 2020 a 2022 de Manga Tommy {.no-title}
@@ -724,8 +719,8 @@ g5 <- ggplot()+
 ggplotly(g5) %>%
   layout(legend = list(
                       orientation = "h", 
-                      x=0.15, 
-                      y=1.05,
+                      x=0.4, 
+                      y=-0.2,
                       title=''))
 ```
 
@@ -760,9 +755,6 @@ ggplotly(g6) %>%
                       title=''))
 ```
 
-Row
------------------------------------------------------------------------
-  
 ### Preço e Tendência de Manga Tommy {.no-title}
 
 ```{r tommy1, results='', fig.cap='', fig.width=6, fig.height=4}
