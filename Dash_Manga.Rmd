@@ -51,14 +51,13 @@ knitr::opts_chunk$set(
   )
 
 library(lubridate)
-dezembro <- as.Date("2021-12-01")
-anterior <-  as.Date("2022-01-01")
-atual <-  as.Date("2022-02-01")
+anterior <-  as.Date("2022-02-01")
+atual <-  as.Date("2022-03-01")
 mesatual <-  as.Date("2022-01-01")
 data <- as.Date("2022-04-01") #ajustar semanalmente
 sem_ano <- 13 #ajustar semanalmente
 date2 <- seq(as.Date('2021-01-01'),to=as.Date('2021-12-01'),by='1 month')
-mes <- 2
+mes <- 3
 
 # Linhas que precisam de ajuste: 71, 104, 107
 ```
@@ -540,7 +539,7 @@ mycolors2 <- c("orange", "lightblue3")
 
 ```
 
-Row {data-height=120}
+Row {data-height=150}
 -----------------------------------------------------------------------
 
 ### Preço de Palmer na Semana `r strftime(data, format = "%V")` de 2022 
@@ -570,10 +569,10 @@ valueBox(
   icon= "fa-pen")
 ```
 
-Row {data-height=700, .tabset}
+Row
 -----------------------------------------------------------------------
 
-### Mínimo, Máximo, Media e Preços de Palmer
+### Mínimo, Máximo, Media e Preços de Palmer {.no-title}
 
 ```{r palmer3, results='', fig.cap='', fig.width=6, fig.height=4, fig.align='center'}
 
@@ -605,11 +604,11 @@ ggplotly(g1) %>%
   layout(legend = list(
                       orientation = "h", 
                       x=0.35, 
-                      y=-0.2,
+                      y=-0.3,
                       title=''))
 ```
 
-### Variação Semanal do Preços
+### Variação Semanal do Preços {.no-title}
 
 ```{r palmer5, results='', fig.cap='', fig.width=5, fig.height=4}
 
@@ -640,7 +639,10 @@ ggplotly(g2) %>%
                       title=''))
 ```
 
-### Preço e Tendência de Palmer
+Row
+-----------------------------------------------------------------------
+
+### Preço e Tendência de Palmer {.no-title}
 
 ```{r palmer1, results='', fig.cap='', fig.width=6, fig.height=4}
 #Gráfico com Ggplot2
@@ -676,7 +678,7 @@ ggplotly(g3) %>%
                       title=''))
 ```
 
-### Sazonalidade de Palmer
+### Sazonalidade de Palmer {.no-title}
 
 ```{r palmer2, results='', fig.cap='', fig.width=5, fig.height=4, fig.align='center'}
 #Decompor a Série
@@ -823,7 +825,7 @@ variacao <- melt(variacao, id.var='Semanas')
 mycolors2 <- c("orange", "lightblue3")
 ```
 
-Row {data-height=120}
+Row {data-height=150}
 -----------------------------------------------------------------------
 
 ### Preço de Tommy na Semana `r strftime(data, format = "%V")` de 2022
@@ -853,10 +855,10 @@ valueBox(
   icon= "fa-pen")
 ```
 
-Row {data-height=700, .tabset}
+Row
 -----------------------------------------------------------------------
 
-###  Mínimo, Máximo, Media e Preços de Tommy
+###  Mínimo, Máximo, Media e Preços de Tommy {.no-title}
 
 ```{r tommy3, results='', fig.cap='', fig.width=6, fig.height=4, fig.align='center'}
 
@@ -888,11 +890,11 @@ ggplotly(g5) %>%
   layout(legend = list(
                       orientation = "h", 
                       x=0.35, 
-                      y=-0.2,
+                      y=-0.3,
                       title=''))
 ```
 
-### Variação Semanal do Preços
+### Variação Semanal do Preços {.no-title}
 
 ```{r tommy5, results='', fig.cap='', fig.width=5, fig.height=4}
 
@@ -923,7 +925,10 @@ ggplotly(g6) %>%
                       title=''))
 ```
 
-### Preço e Tendência de Tommy
+Row
+-----------------------------------------------------------------------
+
+### Preço e Tendência de Tommy {.no-title}
 
 ```{r tommy1, results='', fig.cap='', fig.width=6, fig.height=4}
 #Gráfico com Ggplot2
@@ -959,7 +964,7 @@ ggplotly(g7) %>%
                       title=''))
 ```
 
-### Sazonalidade de Tommy
+### Sazonalidade de Tommy {.no-title}
   
 ```{r tommy2, results='', fig.cap='', fig.width=5, fig.height=4, fig.align='center'}
 #Decompor a Série
@@ -1255,16 +1260,16 @@ Row {data-height=125}
 
 ### Volume Exportação em `r strftime(atual, format = "%B")` de 2022 
 ``` {r d1}
-num <- 9.245
+num <- 12.241
 valueBox(
   value = paste0(num, " Toneladas"),
   color = "green",
-  icon= "fa-arrow-down")
+  icon= "fa-arrow-up")
 ```
 
 ### Volume Exportação em `r strftime(atual, format = "%B")` de 2021 
 ``` {r d2}
-num <- 7.712
+num <- 10.637
 valueBox(
   value = paste0(num, " Toneladas"),
   icon= "fa-pen")
@@ -1272,7 +1277,7 @@ valueBox(
 
 ### Volume Exportação em `r strftime(atual, format = "%B")` de 2020 
 ``` {r d3}
-num <- 7.563
+num <- 10.458
 valueBox(
   value = paste0(num, " Toneladas"),
   icon= "fa-pen")
