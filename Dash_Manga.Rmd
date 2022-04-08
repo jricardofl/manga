@@ -54,8 +54,8 @@ library(lubridate)
 anterior <-  as.Date("2022-02-01")
 atual <-  as.Date("2022-03-01")
 mesatual <-  as.Date("2022-01-01")
-data <- as.Date("2022-04-01") #ajustar semanalmente
-sem_ano <- 13 #ajustar semanalmente
+data <- as.Date("2022-04-08") #ajustar semanalmente
+sem_ano <- 14 #ajustar semanalmente
 date2 <- seq(as.Date('2021-01-01'),to=as.Date('2021-12-01'),by='1 month')
 mes <- 3
 
@@ -553,7 +553,7 @@ valueBox(
 
 ### Preço de Palmer na Semana `r strftime(data, format = "%V")` de 2021
 ``` {r}
-num <- 3.69
+num <- 3.39
 valueBox(
   value = paste0( "R$", format(round(num,2), decimal.mark =  ",")),
 #  color = "#edc40c",
@@ -562,7 +562,7 @@ valueBox(
 
 ### Preço de Palmer na Semana `r strftime(data, format = "%V")` de 2020
 ``` {r}
-num <- 1.56
+num <- 1.34
 valueBox(
   value = paste0( "R$", format(num, decimal.mark =  ",")),
 #  color = "#edc40c",
@@ -839,7 +839,7 @@ valueBox(
 
 ### Preço de Tommy na Semana `r strftime(data, format = "%V")` de 2021
 ``` {r}
-num <- 1.84
+num <- 1.96
 valueBox(
   value = paste0( "R$", format(num, decimal.mark =  ",")),
 #  color = "#edc40c",
@@ -848,7 +848,7 @@ valueBox(
 
 ### Preço de Tommy na Semana `r strftime(data, format = "%V")` de 2020
 ``` {r}
-num <- 1.19
+num <- 1.18
 valueBox(
   value = paste0( "R$", format(num, decimal.mark =  ",")),
 #  color = "#edc40c",
@@ -1433,7 +1433,7 @@ g9 <- ggplot()+
            width = 5, position = "dodge")+
   scale_fill_manual(values=mycolors3)+
   scale_y_continuous(limits = c(0, 4), n.breaks = 4, labels = number_format(accuracy = 0.01, decimal.mark = ","))+
-  scale_x_date(breaks = date_breaks("1 week"),
+  scale_x_date(breaks = date_breaks("1 week"), expand=c(0,0),
                labels = date_format("%W-%y"))+
   labs(y= "Preços R$", x= "Semanas do Ano", title='Evolução dos Preços ao Produtor da manga de exportação por variedade',
        caption = "")+
